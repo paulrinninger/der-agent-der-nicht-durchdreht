@@ -28,6 +28,18 @@ Ein voller Echt-Lauf kostet ca. 0,10–0,30 $ (Haiku: $1/$5 pro MTok, Kosten liv
 > laufenden Batch — für Batches deshalb `npm start`. Falls doch: der Batch lässt sich
 > per **Fortsetzen** aus dem Checkpoint wieder aufnehmen.
 
+## Mission-Control-UI
+
+Das Dashboard visualisiert die Orchestrierung selbst, nicht nur Ergebnisse: Das
+**Scheduler-Deck** zeigt das Concurrency-Limit physisch als Worker-Bays (Agenten docken
+live an und ab, die Warteschlange wartet daneben), der **Budget-Kern** zeigt
+`used + reserved` als Arc-Gauge — die schraffierten Reservierungen sind die
+reserve→commit-Mechanik in Echtzeit. Dazu: Live-**Telemetrie** jedes Tool-Calls,
+Pipeline-Dots pro Agent, **Hold-to-Kill** (700 ms halten — kein versehentlicher Stopp)
+und ein **Budget-Crunch-Preset** (10k), das den Budget-Kill-Switch live demonstriert.
+Alles davon ist Client-seitig aus dem bestehenden Run-State abgeleitet — null Änderung
+am Kern.
+
 ## Eval-Modus — die Pflicht-Kriterien als Beweis, ohne UI und ohne Key
 
 ```bash

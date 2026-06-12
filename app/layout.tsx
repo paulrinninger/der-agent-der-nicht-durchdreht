@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
+import { Instrument_Serif, JetBrains_Mono, Space_Grotesk } from "next/font/google";
+import { Starfield } from "./components/Starfield";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
@@ -16,6 +17,14 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  style: "italic",
+  variable: "--font-instrument-serif",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Der Agent, der nicht durchdreht",
   description:
@@ -24,8 +33,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="de" className={`${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
-      <body>{children}</body>
+    <html
+      lang="de"
+      className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} ${instrumentSerif.variable}`}
+    >
+      <body>
+        <Starfield />
+        <div className="spotlight" aria-hidden />
+        {children}
+      </body>
     </html>
   );
 }
