@@ -58,7 +58,7 @@ const Bay = memo(function Bay({
 
 const QueueRail = memo(function QueueRail({ pending }: { pending: AgentState[] }) {
   return (
-    <div className="mt-4">
+    <div className="mt-4" data-tour="queue">
       <p className="font-display text-[10px] uppercase tracking-[0.2em] text-ink-dim">
         warteschlange · {pending.length}
       </p>
@@ -97,7 +97,7 @@ export const SchedulerDeck = memo(function SchedulerDeck({
   const aborted = agents.filter((a) => a.status === "aborted").length;
 
   return (
-    <section className="glass flex min-h-[21rem] flex-col p-5">
+    <section className="glass flex min-h-[21rem] flex-col p-5" data-tour="deck">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="font-display text-[11px] uppercase tracking-[0.2em] text-ink-dim">
           scheduler · {run.config.concurrency} slots

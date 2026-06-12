@@ -64,7 +64,7 @@ export const FinaleBand = memo(function FinaleBand({ run }: { run: RunState }) {
   ];
 
   return (
-    <section className="glass finale-in mb-4 p-5 sm:p-6">
+    <section className="glass finale-in mb-4 p-5 sm:p-6" data-tour="finale">
       <h2 className="finale-headline">
         {h.pre}
         <em className="accent-serif">{h.em}</em>

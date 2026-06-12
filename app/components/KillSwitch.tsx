@@ -14,6 +14,7 @@ export function KillSwitch({ onKill, disabled }: { onKill: () => void; disabled?
       disabled={disabled}
       className="btn btn-destructive hold-btn"
       aria-label="Kill-Switch: 0,7 Sekunden gedrückt halten zum Stoppen"
+      data-tour="kill"
     >
       <span className="hold-ring" style={{ "--p": progress } as React.CSSProperties} aria-hidden />
       ■ {progress > 0 ? "halten…" : "halten zum stoppen"}

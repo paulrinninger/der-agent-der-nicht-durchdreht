@@ -28,6 +28,15 @@ Ein voller Echt-Lauf kostet ca. 0,10–0,30 $ (Haiku: $1/$5 pro MTok, Kosten liv
 > laufenden Batch — für Batches deshalb `npm start`. Falls doch: der Batch lässt sich
 > per **Fortsetzen** aus dem Checkpoint wieder aufnehmen.
 
+## Geführte Tour
+
+Beim ersten Besuch bietet sich eine **interaktive Tour** an (jederzeit neu über den
+✦-Knopf oben rechts): 11 Schritte, die nicht nur erklären, sondern **mitten in der Tour
+einen echten Mock-Lauf starten** und live kommentieren — wie die Agenten in die Slots
+docken, wie der KI-Toaster durchdreht und vom Step-Cap gestoppt wird, und warum das
+Budget am Ende gehalten hat. Spotlight-Engine ohne Dependencies (eine JS-gelerpte Iris,
+die zwischen den Elementen gleitet), Esc bricht ab, ←/→ navigieren.
+
 ## Mission-Control-UI
 
 Das Dashboard visualisiert die Orchestrierung selbst, nicht nur Ergebnisse: Das

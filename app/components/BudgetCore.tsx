@@ -34,7 +34,7 @@ export const BudgetCore = memo(function BudgetCore({
         </span>
       </div>
 
-      <div className="relative mx-auto mt-1 w-full max-w-[230px]">
+      <div className="relative mx-auto mt-1 w-full max-w-[230px]" data-tour="gauge">
         <Gauge
           usedPct={Math.round(pct(budget.used) * 10) / 10}
           reservedPct={Math.round(pct(budget.reserved) * 10) / 10}

@@ -58,6 +58,7 @@ export const AgentCard = memo(function AgentCard({
       onClick={onClick}
       className={`glass lift enter relative p-4 text-left ${agent.status === "running" ? "is-running" : ""}`}
       style={{ "--i": index } as React.CSSProperties}
+      data-agent-id={agent.itemId}
     >
       {verdict && (
         <span className={`stamp stamp-in ${verdict === "invest" ? "stamp-invest" : "stamp-pass"}`}>

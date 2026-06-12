@@ -39,7 +39,10 @@ export const ControlsBar = memo(function ControlsBar({
   onKill: () => void;
 }) {
   return (
-    <section className="glass glass-blur enter mb-6 flex flex-wrap items-end gap-x-5 gap-y-4 p-4 sm:p-5">
+    <section
+      className="glass glass-blur enter mb-6 flex flex-wrap items-end gap-x-5 gap-y-4 p-4 sm:p-5"
+      data-tour="controls"
+    >
       <div>
         <label className="font-display mb-1.5 block text-[11px] uppercase tracking-[0.15em] text-ink-dim">
           preset

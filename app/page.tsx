@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RunEvent, RunMode, RunState } from "@/src/types";
 import { AgentRoster } from "./components/AgentRoster";
 import { BudgetCore } from "./components/BudgetCore";
@@ -11,6 +11,8 @@ import { MissionHeader } from "./components/MissionHeader";
 import { SchedulerDeck } from "./components/SchedulerDeck";
 import { Ticker } from "./components/Ticker";
 import { TraceDrawer } from "./components/TraceDrawer";
+import { makePreviewRun } from "./components/tour/preview";
+import { Tour } from "./components/tour/Tour";
 
 export default function MissionControl() {
   const [run, setRun] = useState<RunState | null>(null);
@@ -21,6 +23,7 @@ export default function MissionControl() {
   const [selected, setSelected] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
 
   const esRef = useRef<EventSource | null>(null);
   // rAF coalescing: agent_update storms (~25–40/s in fast mock runs) collapse
@@ -113,11 +116,30 @@ export default function MissionControl() {
     }
   };
 
-  const slots = useSlotAssignments(run);
-  const ticker = useTicker(run);
-  const burn = useBurnSeries(run);
+  // tour-controlled start: always mock/standard (a tour never starts a paid
+  // run), and the controls UI is synced to what actually launches
+  const startTourRun = useCallback(() => {
+    setMode("mock");
+    setConcurrency(3);
+    setBudget(200_000);
+    void post("/api/runs", { mode: "mock", concurrency: 3, globalTokenBudget: 200_000 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const agents = run ? run.config.items.map((i) => run.agents[i.id]).filter(Boolean) : [];
+  // render-only preview while the tour is open on an empty dashboard — gives
+  // the spotlight real targets (empty bays, full queue, 0% gauge). All logic
+  // (isRunning, FinaleBand, tour predicates) stays on the REAL run.
+  const preview = useMemo(
+    () => (tourOpen && !run ? makePreviewRun(concurrency, budget) : null),
+    [tourOpen, run, concurrency, budget],
+  );
+  const view = run ?? preview;
+
+  const slots = useSlotAssignments(view);
+  const ticker = useTicker(view);
+  const burn = useBurnSeries(view);
+
+  const agents = view ? view.config.items.map((i) => view.agents[i.id]).filter(Boolean) : [];
   const isRunning = run?.status === "running";
   const isTerminal = run !== null && run.status !== "running";
   const canResume = run !== null && run.status === "stopped";
@@ -125,7 +147,7 @@ export default function MissionControl() {
 
   return (
     <main className="mx-auto max-w-[78rem] px-4 py-8 sm:px-6 sm:py-10">
-      <MissionHeader run={run} />
+      <MissionHeader run={run} onTour={() => setTourOpen(true)} />
 
       <ControlsBar
         mode={mode}
@@ -145,36 +167,36 @@ export default function MissionControl() {
 
       {error && <p className="alert-err mb-4 px-4 py-3 text-sm">{error}</p>}
 
-      {run ? (
+      {view ? (
         <>
           <div className="mb-4 grid gap-4 lg:grid-cols-12">
             <div className="enter lg:col-span-8" style={{ "--i": 2 } as React.CSSProperties}>
-              <SchedulerDeck run={run} slots={slots} />
+              <SchedulerDeck run={view} slots={slots} />
             </div>
             <div className="enter lg:col-span-4" style={{ "--i": 3 } as React.CSSProperties}>
               <BudgetCore
-                budget={run.budget}
-                costUsd={run.costUsd}
+                budget={view.budget}
+                costUsd={view.costUsd}
                 series={burn}
-                mode={run.config.mode}
+                mode={view.config.mode}
                 live={isRunning}
               />
             </div>
           </div>
 
-          {isTerminal && <FinaleBand run={run} />}
+          {isTerminal && run && <FinaleBand run={run} />}
 
           <div className="grid items-start gap-4 lg:grid-cols-12">
             <div
               className="enter lg:sticky lg:top-4 lg:col-span-4"
               style={{ "--i": 4 } as React.CSSProperties}
             >
-              <Ticker entries={ticker} startedAt={run.startedAt} live={isRunning} />
+              <Ticker entries={ticker} startedAt={view.startedAt} live={isRunning} />
             </div>
             <div className="lg:col-span-8">
               <AgentRoster
                 agents={agents}
-                maxSteps={run.config.maxStepsPerAgent}
+                maxSteps={view.config.maxStepsPerAgent}
                 onSelect={setSelected}
               />
             </div>
@@ -194,6 +216,14 @@ export default function MissionControl() {
       )}
 
       {selectedAgent && <TraceDrawer agent={selectedAgent} onClose={() => setSelected(null)} />}
+
+      <Tour
+        open={tourOpen}
+        onOpenChange={setTourOpen}
+        run={run}
+        busy={busy}
+        onStartMock={startTourRun}
+      />
 
       <footer className="mt-12 pb-4 text-center text-xs text-ink-dim">
         eval ohne ui &amp; ohne key:{" "}

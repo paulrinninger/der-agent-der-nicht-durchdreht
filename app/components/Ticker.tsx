@@ -39,6 +39,7 @@ export const Ticker = memo(function Ticker({
   return (
     <section
       className="glass flex max-h-[min(30rem,calc(100dvh-2rem))] flex-col overflow-hidden"
+      data-tour="ticker"
       onPointerEnter={() => {
         frozen.current = entries;
         setPaused(true);

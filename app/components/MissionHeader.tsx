@@ -23,10 +23,23 @@ function statusLine(run: RunState | null): string {
   return `gestoppt (${reason}) — fortsetzen möglich, fertige agenten werden nicht doppelt bezahlt.`;
 }
 
-export const MissionHeader = memo(function MissionHeader({ run }: { run: RunState | null }) {
+export const MissionHeader = memo(function MissionHeader({
+  run,
+  onTour,
+}: {
+  run: RunState | null;
+  onTour: () => void;
+}) {
   return (
-    <header className="enter mb-7">
-      <h1 className="font-display text-3xl font-bold lowercase tracking-tight sm:text-4xl">
+    <header className="enter relative mb-7">
+      <button
+        onClick={onTour}
+        aria-label="produkt-tour starten"
+        className="puck absolute right-0 top-1 cursor-pointer transition-colors hover:text-ink"
+      >
+        ✦ tour
+      </button>
+      <h1 className="font-display pr-20 text-3xl font-bold lowercase tracking-tight sm:text-4xl">
         der agent, der <em className="accent-serif">nicht durchdreht</em>
         <span className="text-accent">.</span>
       </h1>
