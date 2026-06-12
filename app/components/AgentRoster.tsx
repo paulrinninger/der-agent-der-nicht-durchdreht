@@ -8,8 +8,9 @@ import { callCount, num, pillFor } from "./labels";
 export function StatusPill({ agent }: { agent: AgentState }) {
   const p = pillFor(agent);
   return (
-    <span className={"pill pill-" + p.cls}>
-      {agent.status === "running" ? <span className="pulse-dot" /> : null}
+    // keyed by status: terminal pills pop in once
+    <span key={agent.status} className={"pill pill-" + p.cls + (p.cls === "done" ? " pill-pop" : "")}>
+      {agent.status === "running" ? <span className="pulse-dot" style={{ background: "currentColor" }} /> : null}
       {p.label}
     </span>
   );
@@ -47,7 +48,8 @@ const AgentCard = memo(function AgentCard({
 
   return (
     <button
-      className={"card status-" + p.cls + (selected ? " selected" : "")}
+      className={"card enter status-" + p.cls + (selected ? " selected" : "")}
+      style={{ "--i": index } as React.CSSProperties}
       onClick={onClick}
       data-agent-id={agent.itemId}
     >
@@ -70,7 +72,10 @@ const AgentCard = memo(function AgentCard({
           {agent.steps}/{maxSteps} Steps
         </span>
         <span title="Tool-Calls">{callCount(agent)} Calls</span>
-        <span title="Tokens">{num(agent.usage.inputTokens + agent.usage.outputTokens)} Tok</span>
+        {/* keyed remount: zahl blippt bei jeder token-änderung */}
+        <span title="Tokens" key={agent.usage.inputTokens + agent.usage.outputTokens} className="blip-num">
+          {num(agent.usage.inputTokens + agent.usage.outputTokens)} Tok
+        </span>
         {agent.strikes > 0 && (
           <span className="danger" data-tip="Ungültige Tool-Calls. Drei Strikes, und der Agent wird gestoppt.">
             {agent.strikes} Strikes

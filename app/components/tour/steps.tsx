@@ -57,14 +57,15 @@ export const STEPS: TourStep[] = [
     ),
   },
   {
-    id: "stats",
-    target: '[data-tour="stats"]',
+    id: "slots",
+    target: '[data-tour="slots"]',
     placement: "bottom",
-    title: <>Das Concurrency-Limit, live.</>,
+    title: <>Das Concurrency-Limit, zum Anfassen.</>,
     body: (
       <>
-        Nie mehr als drei Agenten gleichzeitig — egal ob 15 Items oder 200. Wer keinen Slot hat,
-        steht in der Warteschlange. Kein nacktes promise.all über die Liste.
+        Drei Slots, mehr nicht — egal ob 15 Items oder 200. Die Agenten docken hier live an und
+        ab, wer keinen Slot hat, wartet unten in der Schlange. Kein nacktes promise.all über die
+        Liste.
       </>
     ),
   },

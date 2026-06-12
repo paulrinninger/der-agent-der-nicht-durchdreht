@@ -6,11 +6,14 @@ import type { RunEvent, RunMode, RunState } from "@/src/types";
 import { AgentRoster } from "./components/AgentRoster";
 import { Banner } from "./components/Banner";
 import { ControlsBar } from "./components/ControlsBar";
+import { useSlotAssignments, useTicker } from "./components/hooks";
 import { ItemEditor, type EditorItem } from "./components/ItemEditor";
 import { MissionHeader } from "./components/MissionHeader";
 import { CHAOS_ITEMS, type PresetDef } from "./components/presets";
 import { RunTimeline } from "./components/RunTimeline";
+import { SlotsPanel } from "./components/SlotsPanel";
 import { StatsBar } from "./components/StatsBar";
+import { TickerPanel } from "./components/TickerPanel";
 import { TraceDrawer } from "./components/TraceDrawer";
 import { makePreviewRun } from "./components/tour/preview";
 import { Tour } from "./components/tour/Tour";
@@ -200,6 +203,9 @@ export default function Dashboard() {
   );
   const view = run ?? preview;
 
+  const slots = useSlotAssignments(view);
+  const ticker = useTicker(view, 80);
+
   const agents = view ? view.config.items.map((i) => view.agents[i.id]).filter(Boolean) : [];
   const isRunning = run?.status === "running";
   const canResume = run !== null && run.status === "stopped";
@@ -245,10 +251,33 @@ export default function Dashboard() {
         </div>
       )}
 
+      <nav className="flow" aria-label="So funktioniert ein Lauf">
+        <span className="flow-chip">
+          <b>①</b> {itemCount} Items
+        </span>
+        <span className="flow-arrow">→</span>
+        <span
+          className="flow-chip"
+          data-tip="Feste Reihenfolge, deterministisch — der Scheduler zieht das nächste Item, sobald ein Slot frei wird."
+        >
+          <b>②</b> Warteschlange
+        </span>
+        <span className="flow-arrow">→</span>
+        <span className="flow-chip" data-tip="Das Concurrency-Limit: Mehr Agenten arbeiten nie gleichzeitig.">
+          <b>③</b> max. {concurrency} parallel
+        </span>
+        <span className="flow-arrow">→</span>
+        <span className="flow-chip">
+          <b>④</b> Urteil: Invest / Pass
+        </span>
+        <span className="flow-guard">⛨ Token-Budget wacht über den ganzen Lauf</span>
+      </nav>
+
       {view ? (
         <>
           <StatsBar run={view} />
           {run && <Banner run={run} />}
+          <SlotsPanel run={view} slots={slots} />
           <AgentRoster
             agents={agents}
             items={view.config.items}
@@ -257,6 +286,9 @@ export default function Dashboard() {
             onSelect={(id) => setSelected(selected === id ? null : id)}
           />
           {run && run.id !== "tour-preview" && <RunTimeline run={run} live={isRunning} />}
+          {run && run.id !== "tour-preview" && (
+            <TickerPanel entries={ticker} startedAt={run.startedAt} live={isRunning} />
+          )}
         </>
       ) : (
         <div className="banner banner-ok">

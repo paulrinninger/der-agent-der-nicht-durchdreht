@@ -2,7 +2,15 @@
 
 import { memo } from "react";
 import type { RunState } from "@/src/types";
+import { parseVerdict } from "./derive";
+import { useOdometer } from "./hooks";
 import { num } from "./labels";
+
+/** Stat-Zahl mit Count-up (rAF-eased, snapped bei reduced motion) */
+function StatNum({ value }: { value: number }) {
+  const d = useOdometer(value);
+  return <>{Math.round(d)}</>;
+}
 
 function BudgetBar({ run }: { run: RunState }) {
   const { used, reserved, peak, limit } = run.budget;
@@ -56,6 +64,9 @@ export const StatsBar = memo(function StatsBar({ run }: { run: RunState }) {
   const done = count("completed");
   const stopped = count("failed");
   const killed = count("aborted");
+  const invest = agents.filter((a) => parseVerdict(a.result) === "invest").length;
+  const pass = agents.filter((a) => parseVerdict(a.result) === "pass").length;
+  const cost = useOdometer(run.costUsd);
 
   return (
     <div className="stats" data-tour="stats">
@@ -67,26 +78,42 @@ export const StatsBar = memo(function StatsBar({ run }: { run: RunState }) {
         <span className="label">Aktiv / Limit</span>
       </div>
       <div className="stat">
-        <span className="stat-num mono">{queued}</span>
+        <span className="stat-num mono">
+          <StatNum value={queued} />
+        </span>
         <span className="label">Warteschlange</span>
       </div>
       <div className="stat">
         <span className="stat-num mono accent">
-          {done}
+          <StatNum value={done} />
           <span className="stat-dim"> / {agents.length}</span>
         </span>
         <span className="label">Fertig</span>
       </div>
+      <div className="stat" data-tip="Live-Bilanz der Urteile: Der Agent würde investieren / winkt ab.">
+        <span className="stat-num mono">
+          <span className="accent">
+            <StatNum value={invest} />
+          </span>
+          <span className="stat-dim"> / </span>
+          <StatNum value={pass} />
+        </span>
+        <span className="label">Invest / Pass</span>
+      </div>
       <div className="stat">
-        <span className={"stat-num mono" + (stopped ? " warn" : "")}>{stopped}</span>
+        <span className={"stat-num mono" + (stopped ? " warn" : "")}>
+          <StatNum value={stopped} />
+        </span>
         <span className="label">Gestoppt</span>
       </div>
       <div className="stat">
-        <span className={"stat-num mono" + (killed ? " danger" : "")}>{killed}</span>
+        <span className={"stat-num mono" + (killed ? " danger" : "")}>
+          <StatNum value={killed} />
+        </span>
         <span className="label">Abgebrochen</span>
       </div>
       <div className="stat">
-        <span className="stat-num mono">${run.costUsd.toFixed(4)}</span>
+        <span className="stat-num mono">${cost.toFixed(4)}</span>
         <span className="label">Kosten {run.config.mode === "mock" ? "(simuliert)" : "(Haiku)"}</span>
       </div>
       <div className="stat stat-budget">
