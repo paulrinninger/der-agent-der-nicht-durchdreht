@@ -267,24 +267,29 @@ export function Tour({
                 {step.action.label}
               </button>
             ))}
-          <div
-            style={{
-              marginTop: 16,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 12,
-            }}
-          >
+          {/* dots über den buttons: 11 dots + drei deutsche labels passen nie
+              nebeneinander in die 22rem-box — zweizeilig statt überlauf */}
+          <div style={{ marginTop: 14, display: "flex", justifyContent: "center" }}>
             <div className="tour-dots" aria-hidden>
               {STEPS.map((s, i) => (
                 <span key={s.id} className={`tour-dot ${i === idx ? "tour-dot-active" : ""}`} />
               ))}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <button className="btn btn-ghost" style={{ fontSize: 12, padding: "5px 10px" }} onClick={() => close("skipped")}>
-                Überspringen
-              </button>
+          </div>
+          <div
+            style={{
+              marginTop: 10,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 8,
+              flexWrap: "wrap",
+            }}
+          >
+            <button className="btn btn-ghost" style={{ fontSize: 12, padding: "5px 10px" }} onClick={() => close("skipped")}>
+              Überspringen
+            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto" }}>
               {idx > 0 && (
                 <button className="btn" style={{ fontSize: 12, padding: "5px 12px" }} onClick={() => go(-1)}>
                   Zurück

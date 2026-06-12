@@ -15,7 +15,9 @@ export async function POST(req: NextRequest) {
     res.cookies.set(GATE_COOKIE, GATE_TOKEN, {
       httpOnly: true,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      // am Protokoll festmachen, nicht an NODE_ENV: `next start` ist auch
+      // lokal "production", aber http — ein Secure-Cookie ginge dort verloren
+      secure: req.nextUrl.protocol === "https:",
       maxAge: 60 * 60 * 24 * 14,
       path: "/",
     });
