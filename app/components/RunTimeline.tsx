@@ -5,11 +5,11 @@ import type { RunState } from "@/src/types";
 import { deriveTimeline } from "./derive";
 import { useNow } from "./hooks";
 
-const LABEL = "11rem"; // name column — one constant, used in all four places
+const LABEL = "11rem"; // Namensspalte — eine Konstante für alle vier Stellen
 
 /**
- * Live gantt of the whole run: one row per agent, bar = lifespan, notches =
- * tool calls, accent cursor = now. Derived purely from existing traces.
+ * Live-Gantt über den ganzen Lauf: ein Balken pro Agent (Laufzeit), Kerben
+ * pro Tool-Call, Cursor = jetzt. Rein aus den vorhandenen Traces abgeleitet.
  */
 export const RunTimeline = memo(function RunTimeline({
   run,
@@ -25,27 +25,28 @@ export const RunTimeline = memo(function RunTimeline({
   if (model.rows.length === 0) return null;
 
   return (
-    <section className="glass mb-4 p-5">
+    <section className="tl-panel" data-tour="timeline">
       <button
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-baseline justify-between gap-3 text-left"
+        style={{ background: "none", border: "none", cursor: "pointer", font: "inherit", color: "inherit", padding: 0 }}
         aria-expanded={open}
       >
-        <h2 className="panel-title">lauf-timeline {open ? "▾" : "▸"}</h2>
-        <span className="panel-meta">
-          {model.rows.length + model.hidden} agenten ·{" "}
+        <span className="label">Lauf-Timeline {open ? "▾" : "▸"}</span>
+        <span className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>
+          {model.rows.length + model.hidden} Agenten ·{" "}
           {(model.spanMs / 1000).toFixed(1).replace(".", ",")}s
         </span>
       </button>
 
       {open && (
         <>
-          <p className="panel-sub">
-            eine zeile pro agent: balken = laufzeit, kerben = einzelne tool-calls.
+          <p className="caption" style={{ margin: "6px 0 12px" }}>
+            Eine Zeile pro Agent: Balken = Laufzeit, Kerben = einzelne Tool-Calls.
           </p>
-          <div className="tl-scroll mt-3 overflow-x-auto">
+          <div className="overflow-x-auto">
             <div className="min-w-[40rem]">
-              <div className="relative space-y-[5px]">
+              <div className="relative space-y-[6px]">
                 {model.gridlines.map((g) => (
                   <div
                     key={g.label}
@@ -68,7 +69,7 @@ export const RunTimeline = memo(function RunTimeline({
                     style={{ gridTemplateColumns: `${LABEL} 1fr` }}
                     title={r.tooltip}
                   >
-                    <span className="tl-name">{r.name.toLowerCase()}</span>
+                    <span className="tl-name">{r.name}</span>
                     <div className="tl-track relative">
                       <div
                         className={`tl-bar tl-${r.status}`}
@@ -89,8 +90,8 @@ export const RunTimeline = memo(function RunTimeline({
                 ))}
               </div>
               {model.hidden > 0 && (
-                <p className="mt-2 font-mono text-[11px] text-ink-dim/60">
-                  … {model.hidden} weitere agenten ausgeblendet
+                <p className="mono faint-c" style={{ marginTop: 8, fontSize: 11 }}>
+                  … {model.hidden} weitere Agenten ausgeblendet
                 </p>
               )}
               <div className="relative mt-1 h-4" style={{ marginLeft: LABEL }}>
@@ -100,8 +101,8 @@ export const RunTimeline = memo(function RunTimeline({
                   </span>
                 ))}
               </div>
-              <div className="legend mt-3">
-                <span className="legend-label">balken:</span>
+              <div className="legend" style={{ marginTop: 12 }}>
+                <span className="legend-label">Balken:</span>
                 <span>
                   <i className="legend-swatch legend-swatch-running" /> läuft
                 </span>
@@ -109,20 +110,20 @@ export const RunTimeline = memo(function RunTimeline({
                   <i className="legend-swatch legend-swatch-completed" /> fertig
                 </span>
                 <span>
-                  <i className="legend-swatch legend-swatch-failed" /> fehler
+                  <i className="legend-swatch legend-swatch-failed" /> gestoppt
                 </span>
                 <span>
-                  <i className="legend-swatch legend-swatch-aborted" /> gestoppt
+                  <i className="legend-swatch legend-swatch-aborted" /> abgebrochen
                 </span>
-                <span className="legend-label">kerben:</span>
+                <span className="legend-label">Kerben:</span>
                 <span>
-                  <i className="legend-tick legend-tick-executed" /> tool ok
+                  <i className="legend-tick legend-tick-executed" /> Tool ok
                 </span>
                 <span>
                   <i className="legend-tick legend-tick-rejected" /> abgelehnt
                 </span>
                 <span>
-                  <i className="legend-tick legend-tick-error" /> tool-fehler
+                  <i className="legend-tick legend-tick-error" /> Tool-Fehler
                 </span>
               </div>
             </div>

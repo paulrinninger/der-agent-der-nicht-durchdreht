@@ -4,17 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BATCH_ITEMS } from "@/src/items";
 import type { RunEvent, RunMode, RunState } from "@/src/types";
 import { AgentRoster } from "./components/AgentRoster";
-import { BudgetCore } from "./components/BudgetCore";
+import { Banner } from "./components/Banner";
 import { ControlsBar } from "./components/ControlsBar";
-import { FinaleBand } from "./components/FinaleBand";
-import { FlowStrip } from "./components/FlowStrip";
-import { useBurnSeries, useSlotAssignments, useTicker } from "./components/hooks";
 import { ItemEditor, type EditorItem } from "./components/ItemEditor";
 import { MissionHeader } from "./components/MissionHeader";
 import { CHAOS_ITEMS, type PresetDef } from "./components/presets";
 import { RunTimeline } from "./components/RunTimeline";
-import { SchedulerDeck } from "./components/SchedulerDeck";
-import { Ticker } from "./components/Ticker";
+import { StatsBar } from "./components/StatsBar";
 import { TraceDrawer } from "./components/TraceDrawer";
 import { makePreviewRun } from "./components/tour/preview";
 import { Tour } from "./components/tour/Tour";
@@ -45,7 +41,7 @@ function readStoredItems(): EditorItem[] | null {
   }
 }
 
-export default function MissionControl() {
+export default function Dashboard() {
   const [run, setRun] = useState<RunState | null>(null);
   const [hasApiKey, setHasApiKey] = useState(false);
   const [mode, setMode] = useState<RunMode>("mock");
@@ -59,7 +55,6 @@ export default function MissionControl() {
   const [customItems, setCustomItems] = useState<EditorItem[] | null>(null);
   const [preset, setPreset] = useState<PresetDef["key"] | null>("kontrolliert");
 
-  // hydrate custom items after mount (SSR-safe), persist on change
   useEffect(() => {
     setCustomItems(readStoredItems());
   }, []);
@@ -75,8 +70,7 @@ export default function MissionControl() {
   }, []);
 
   const esRef = useRef<EventSource | null>(null);
-  // rAF coalescing: agent_update storms (~25–40/s in fast mock runs) collapse
-  // to one render per frame; snapshots and terminal updates flush immediately.
+  // rAF coalescing: agent_update storms collapse to one render per frame
   const runRef = useRef<RunState | null>(null);
   const pendingRef = useRef<RunState | null>(null);
   const flushRaf = useRef(0);
@@ -165,8 +159,7 @@ export default function MissionControl() {
     }
   };
 
-  // tour-controlled start: always mock/standard/default items (a tour never
-  // starts a paid run), and the controls UI is synced to what actually launches
+  // tour-controlled start: always demo mode + default items
   const startTourRun = useCallback(() => {
     setMode("mock");
     setConcurrency(3);
@@ -200,27 +193,23 @@ export default function MissionControl() {
     });
   };
 
-  // render-only preview while the tour is open on an empty dashboard — gives
-  // the spotlight real targets (empty bays, full queue, 0% gauge). All logic
-  // (isRunning, FinaleBand, tour predicates) stays on the REAL run.
+  // render-only preview while the tour is open on an empty dashboard
   const preview = useMemo(
     () => (tourOpen && !run ? makePreviewRun(concurrency, budget) : null),
     [tourOpen, run, concurrency, budget],
   );
   const view = run ?? preview;
 
-  const slots = useSlotAssignments(view);
-  const ticker = useTicker(view, 80);
-  const burn = useBurnSeries(view);
-
   const agents = view ? view.config.items.map((i) => view.agents[i.id]).filter(Boolean) : [];
   const isRunning = run?.status === "running";
-  const isTerminal = run !== null && run.status !== "running";
   const canResume = run !== null && run.status === "stopped";
-  const selectedAgent = selected && run ? run.agents[selected] : null;
+  const selectedAgent = selected && view ? view.agents[selected] : null;
+  const selectedIndex = selected && view ? view.config.items.findIndex((i) => i.id === selected) : -1;
+  const itemCount =
+    preset === "chaos" ? CHAOS_ITEMS.length : (customItems ?? DEFAULT_EDITOR_ITEMS).length;
 
   return (
-    <main className="mx-auto max-w-[78rem] px-4 py-8 sm:px-6 sm:py-10">
+    <div className="page">
       <MissionHeader run={run} onTour={() => setTourOpen(true)} />
 
       <ControlsBar
@@ -238,7 +227,7 @@ export default function MissionControl() {
         }}
         preset={preset}
         onPreset={applyPreset}
-        itemCount={preset === "chaos" ? CHAOS_ITEMS.length : (customItems ?? DEFAULT_EDITOR_ITEMS).length}
+        itemCount={itemCount}
         onOpenItems={() => setEditorOpen(true)}
         hasApiKey={hasApiKey}
         isRunning={isRunning}
@@ -249,64 +238,50 @@ export default function MissionControl() {
         onKill={() => run && post(`/api/runs/${run.id}/kill`)}
       />
 
-      <FlowStrip
-        itemCount={preset === "chaos" ? CHAOS_ITEMS.length : (customItems ?? DEFAULT_EDITOR_ITEMS).length}
-        concurrency={concurrency}
-      />
-
-      {error && <p className="alert-err mb-4 px-4 py-3 text-sm">{error}</p>}
+      {error && (
+        <div className="banner banner-danger">
+          <span className="banner-mark">◼</span>
+          {error}
+        </div>
+      )}
 
       {view ? (
         <>
-          <div className="mb-4 grid gap-4 lg:grid-cols-12">
-            <div className="enter lg:col-span-8" style={{ "--i": 2 } as React.CSSProperties}>
-              <SchedulerDeck run={view} slots={slots} />
-            </div>
-            <div className="enter lg:col-span-4" style={{ "--i": 3 } as React.CSSProperties}>
-              <BudgetCore
-                budget={view.budget}
-                costUsd={view.costUsd}
-                series={burn}
-                mode={view.config.mode}
-                live={isRunning}
-              />
-            </div>
-          </div>
-
+          <StatsBar run={view} />
+          {run && <Banner run={run} />}
+          <AgentRoster
+            agents={agents}
+            items={view.config.items}
+            maxSteps={view.config.maxStepsPerAgent}
+            selectedId={selected}
+            onSelect={(id) => setSelected(selected === id ? null : id)}
+          />
           {run && run.id !== "tour-preview" && <RunTimeline run={run} live={isRunning} />}
-
-          {isTerminal && run && <FinaleBand run={run} />}
-
-          <div className="grid items-start gap-4 lg:grid-cols-12">
-            <div
-              className="enter lg:sticky lg:top-4 lg:col-span-4"
-              style={{ "--i": 4 } as React.CSSProperties}
-            >
-              <Ticker entries={ticker} startedAt={view.startedAt} live={isRunning} />
-            </div>
-            <div className="lg:col-span-8">
-              <AgentRoster
-                agents={agents}
-                maxSteps={view.config.maxStepsPerAgent}
-                onSelect={setSelected}
-              />
-            </div>
-          </div>
         </>
       ) : (
-        <section className="glass enter border-dashed p-12 text-center text-ink-dim">
-          <p className="text-lg">
-            noch <em className="accent-serif">kein</em> lauf.
-          </p>
-          <p className="mx-auto mt-2 max-w-[36rem] text-sm">
-            „lauf starten“ schickt {(customItems ?? DEFAULT_EDITOR_ITEMS).length} quatsch-startups
-            durch je einen agenten — max. {concurrency} parallel, hartes token-budget, kill-switch
-            jederzeit. oben siehst du dann live, wer gerade in welchem slot arbeitet.
-          </p>
-        </section>
+        <div className="banner banner-ok">
+          <span className="banner-mark">●</span>
+          Noch kein Lauf. „Batch starten“ schickt {itemCount} Quatsch-Startups durch je einen
+          Agenten — max. {concurrency} parallel, hartes Token-Budget, Kill-Switch jederzeit.
+        </div>
       )}
 
-      {selectedAgent && <TraceDrawer agent={selectedAgent} onClose={() => setSelected(null)} />}
+      <footer className="foot label">
+        Mock-Tools, deterministische Domäne, echte Orchestrierung: Validierung vor Ausführung,
+        Step- und Token-Caps pro Agent, Retry mit Backoff, globales Budget mit Kill-Switch.
+        Klick auf eine Karte öffnet den Agent-Trace. Beweisbar ohne UI und ohne Key:{" "}
+        <span className="mono">npm run eval</span> — 16 Assertions, Exit 0.
+      </footer>
+
+      {selectedAgent && view && (
+        <TraceDrawer
+          agent={selectedAgent}
+          index={selectedIndex}
+          startedAt={view.startedAt}
+          maxSteps={view.config.maxStepsPerAgent}
+          onClose={() => setSelected(null)}
+        />
+      )}
 
       <ItemEditor
         open={editorOpen}
@@ -325,14 +300,6 @@ export default function MissionControl() {
         busy={busy}
         onStartMock={startTourRun}
       />
-
-      <footer className="mt-12 pb-4 text-center text-xs text-ink-dim">
-        eval ohne ui &amp; ohne key:{" "}
-        <code className="rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono">
-          npm run eval
-        </code>{" "}
-        — beweist step-cap, budget-invariante, isolation, concurrency-limit, resume.
-      </footer>
-    </main>
+    </div>
   );
 }

@@ -6,9 +6,9 @@ import { KillSwitch } from "./KillSwitch";
 import { PRESETS, type PresetDef } from "./presets";
 
 /**
- * Two deliberate rows on one flush line ("was läuft" / "wie es läuft"),
- * hairline between them; the action zone spans both rows on the right and
- * never wraps alone.
+ * Design-Mockup-Layout: Szenario-Tabs links, rechts Limit · Modus ·
+ * Items · Start (primary) · Fortsetzen · Kill-Switch. Darunter die Caption
+ * des aktiven Szenarios.
  */
 export const ControlsBar = memo(function ControlsBar({
   mode,
@@ -47,132 +47,116 @@ export const ControlsBar = memo(function ControlsBar({
   onResume: () => void;
   onKill: () => void;
 }) {
+  const active = PRESETS.find((p) => p.key === preset);
+
   return (
-    <section className="glass glass-blur enter mb-4 p-4 sm:p-5" data-tour="controls">
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
-        <div className="space-y-3">
-          {/* row 1: WAS läuft */}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <span className="ctrl-label">was läuft</span>
-            {PRESETS.map((p) => (
-              <button
-                key={p.key}
-                disabled={isRunning}
-                onClick={() => onPreset(p)}
-                data-tip={p.hint}
-                data-tip-pos="bottom"
-                className={`puck cursor-pointer transition-colors ${
-                  preset === p.key ? "border-accent/40 text-ink" : "hover:text-ink"
-                }`}
-              >
-                {p.label}
-                <span className={`puck-tag ${p.tagClass}`}>{p.tag}</span>
-              </button>
-            ))}
+    <>
+      <section className="controls" data-tour="controls">
+        <div className="tabs" role="tablist" data-tour="tabs">
+          {PRESETS.map((p) => (
             <button
-              onClick={onOpenItems}
-              data-tip="öffnet den editor: eigene ideen anlegen, löschen oder per ki erfinden lassen."
-              data-tip-pos="bottom"
-              className="puck h-7 cursor-pointer hover:text-ink"
+              key={p.key}
+              role="tab"
+              aria-selected={preset === p.key}
+              disabled={isRunning}
+              className={"tab" + (preset === p.key ? " active" : "")}
+              onClick={() => onPreset(p)}
             >
-              ✎ items · {itemCount}
+              {p.label}
+            </button>
+          ))}
+        </div>
+        <div className="controls-right">
+          <label className="limit-ctl label">
+            Limit
+            <select
+              className="select mono"
+              value={concurrency}
+              disabled={isRunning}
+              data-tip="Wie viele Agenten gleichzeitig arbeiten dürfen — der Rest wartet in der Schlange."
+              data-tip-pos="bottom"
+              onChange={(e) => onConcurrency(Number(e.target.value))}
+            >
+              {[1, 2, 3, 4, 5].map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="limit-ctl label">
+            Budget
+            <input
+              type="number"
+              className="input mono"
+              style={{ width: 96 }}
+              value={budget}
+              disabled={isRunning}
+              min={1_000}
+              step={1_000}
+              data-tip="Harte Token-Obergrenze für den gesamten Lauf — wird sie erreicht, stoppt alles."
+              data-tip-pos="bottom"
+              onChange={(e) => onBudget(Number(e.target.value))}
+            />
+          </label>
+          <div className="seg" role="radiogroup" aria-label="Modus">
+            <button
+              className={"seg-btn" + (mode === "mock" ? " active" : "")}
+              disabled={isRunning}
+              data-tip="Simulierter Lauf mit deterministischen Fake-Antworten — kostet nichts."
+              data-tip-pos="bottom"
+              onClick={() => onMode("mock")}
+            >
+              Demo ($0)
+            </button>
+            <button
+              className={"seg-btn" + (mode === "anthropic" ? " active" : "")}
+              disabled={isRunning || !hasApiKey}
+              data-tip={
+                hasApiKey
+                  ? "Echte KI-Calls über Claude Haiku — kostet pro Lauf ein paar Cent."
+                  : "Kein ANTHROPIC_API_KEY in .env — der Demo-Modus bleibt voll nutzbar."
+              }
+              data-tip-pos="bottom"
+              onClick={() => onMode("anthropic")}
+            >
+              Claude Haiku
             </button>
           </div>
-
-          <div className="h-px bg-white/[0.06]" aria-hidden />
-
-          {/* row 2: WIE es läuft */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <span className="ctrl-label">wie es läuft</span>
-            <div className="flex items-center gap-2">
-              <span className="ctrl-field-label">modus</span>
-              <div className="seg">
-                <button
-                  onClick={() => onMode("mock")}
-                  disabled={isRunning}
-                  data-tip="simulierter lauf mit deterministischen fake-antworten — kostet nichts, perfekt zum ausprobieren."
-                  data-tip-pos="bottom"
-                  className={`seg-item ${mode === "mock" ? "seg-item-active" : ""}`}
-                >
-                  demo ($0)
-                </button>
-                <button
-                  onClick={() => onMode("anthropic")}
-                  disabled={isRunning || !hasApiKey}
-                  data-tip={
-                    hasApiKey
-                      ? "echte ki-calls über claude haiku — kostet pro lauf ein paar cent."
-                      : "kein ANTHROPIC_API_KEY in .env — der demo-modus bleibt voll nutzbar."
-                  }
-                  data-tip-pos="bottom"
-                  className={`seg-item ${mode === "anthropic" ? "seg-item-active" : ""}`}
-                >
-                  claude haiku
-                </button>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="ctrl-field-label" htmlFor="ctrl-par">
-                parallel
-              </label>
-              <select
-                id="ctrl-par"
-                value={concurrency}
-                disabled={isRunning}
-                data-tip="wie viele agenten gleichzeitig arbeiten dürfen — der rest wartet in der schlange."
-                data-tip-pos="bottom"
-                onChange={(e) => onConcurrency(Number(e.target.value))}
-                className="field text-sm"
-              >
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="ctrl-field-label" htmlFor="ctrl-bud">
-                budget
-              </label>
-              <input
-                id="ctrl-bud"
-                type="number"
-                value={budget}
-                disabled={isRunning}
-                min={1_000}
-                step={1_000}
-                data-tip="harte obergrenze für den gesamten lauf. wird sie erreicht, stoppt alles — garantiert."
-                data-tip-pos="bottom"
-                onChange={(e) => onBudget(Number(e.target.value))}
-                className="field w-28 font-mono text-sm"
-              />
-              <span className="font-mono text-[11px] text-ink-dim">tokens</span>
-            </div>
-          </div>
-        </div>
-
-        {/* action zone: spans both rows, vertically centered, never wraps alone */}
-        <div className="flex items-center gap-2 lg:border-l lg:border-white/[0.06] lg:pl-4">
+          <button
+            className="btn btn-ghost"
+            onClick={onOpenItems}
+            data-tip="Eigene Ideen anlegen, löschen oder per KI erfinden lassen."
+            data-tip-pos="bottom"
+          >
+            ✎ Items · {itemCount}
+          </button>
           {canResume && (
             <button
-              onClick={onResume}
+              className="btn"
               disabled={busy}
-              data-tip="startet nur die unfertigen agenten neu — fertige werden nicht doppelt bezahlt."
-              className="btn btn-warn w-full lg:w-auto"
+              data-tip="Startet nur die unfertigen Agenten neu — fertige werden nicht doppelt bezahlt."
+              data-tip-pos="bottom"
+              onClick={onResume}
             >
-              ↻ fortsetzen
+              ↻ Fortsetzen
             </button>
           )}
           {isRunning ? (
             <KillSwitch onKill={onKill} disabled={busy} />
           ) : (
-            <button onClick={onStart} disabled={busy} className="btn btn-positive w-full lg:w-auto">
-              ▶ lauf starten
+            <button className="btn btn-primary" disabled={busy} onClick={onStart}>
+              Batch starten
             </button>
           )}
         </div>
-      </div>
-    </section>
+      </section>
+
+      <p className="caption">
+        {active
+          ? active.hint
+          : "Eigene Einstellungen — Limit, Budget und Items frei gewählt. Die Caps und das globale Budget gelten trotzdem, immer."}
+      </p>
+    </>
   );
 });

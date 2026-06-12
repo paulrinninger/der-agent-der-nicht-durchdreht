@@ -5,9 +5,8 @@ import type { RunMode, Usage } from "@/src/types";
 import { num } from "./labels";
 
 /**
- * Item editor sheet: own ideas in, AI-invented ideas in, defaults out.
- * Items are lifted state (page.tsx owns them + localStorage); the editor
- * never starts runs. null = defaults (the 15 built-in startups).
+ * Item-Editor als Drawer im Design-Stil: eigene Ideen rein, KI-erfundene
+ * rein, Defaults zurück. Items sind lifted state (page.tsx + localStorage).
  */
 
 export interface EditorItem {
@@ -26,7 +25,6 @@ interface GenResult {
 const supportsFieldSizing =
   typeof CSS !== "undefined" && CSS.supports("field-sizing", "content");
 
-/** auto-grow fallback for browsers without CSS field-sizing (Safari) */
 function autoGrow(el: HTMLTextAreaElement): void {
   if (supportsFieldSizing) return;
   el.style.height = "auto";
@@ -96,7 +94,7 @@ export function ItemEditor({
         error?: string;
       };
       if (!res.ok || !data.items) {
-        setGenError(data.error ?? `fehler ${res.status}`);
+        setGenError(data.error ?? `Fehler ${res.status}`);
         return;
       }
       mutate([...data.items.map((i) => ({ ...i, chaos: false })), ...rows]);
@@ -107,7 +105,7 @@ export function ItemEditor({
         costUsd: data.costUsd,
       });
     } catch {
-      setGenError("anfrage fehlgeschlagen.");
+      setGenError("Anfrage fehlgeschlagen.");
     } finally {
       setGenerating(false);
     }
@@ -117,93 +115,92 @@ export function ItemEditor({
 
   return (
     <div className="fixed inset-0 z-[55]">
-      <div className="drawer-backdrop absolute inset-0" onClick={onClose} />
+      <div className="scrim" onClick={onClose} />
       <aside
+        className="drawer drawer-wide"
         role="dialog"
         aria-modal="true"
-        aria-label="item-editor"
-        className="glass-sheet drawer-sheet absolute bottom-2 right-2 top-2 flex w-[min(42rem,calc(100vw-1rem))] flex-col p-5 sm:bottom-3 sm:right-3 sm:top-3"
+        aria-label="Item-Editor"
       >
-        <div className="mb-3 flex items-start justify-between gap-3">
+        <header className="drawer-head">
           <div>
-            <h2 className="font-display text-lg font-semibold lowercase">items · {n}</h2>
-            <p className="panel-sub">
-              jede idee bekommt einen eigenen agenten. änderungen gelten ab dem nächsten lauf.
+            <span className="label">Items · {n}</span>
+            <h2 className="drawer-title">Eigene Ideen</h2>
+            <p className="caption" style={{ margin: "6px 0 0" }}>
+              Jede Idee bekommt einen eigenen Agenten. Änderungen gelten ab dem nächsten Lauf.
             </p>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="controls-right" style={{ flexShrink: 0 }}>
             {isCustom && (
-              <button onClick={() => onChange(null)} className="puck cursor-pointer hover:text-ink">
-                ↺ zurücksetzen
+              <button className="btn btn-ghost" onClick={() => onChange(null)}>
+                ↺ Zurücksetzen
               </button>
             )}
-            <button
-              onClick={onClose}
-              aria-label="Schließen"
-              className="btn h-11 w-11 rounded-full p-0 text-ink-dim"
-            >
-              ✕
+            <button className="btn btn-ghost" onClick={onClose}>
+              Schließen
             </button>
           </div>
-        </div>
+        </header>
 
-        {/* generator strip */}
-        <div className="mb-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-          <p className="ctrl-field-label mb-2">✨ neue ideen erfinden lassen</p>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-2">
-              <span className="ctrl-field-label">wie viele?</span>
-              <div className="seg">
-                {[3, 5, 10].map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setGenCount(c)}
-                    className={`seg-item ${genCount === c ? "seg-item-active" : ""}`}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
+        {/* Generator */}
+        <div className="gen-box">
+          <p className="label" style={{ marginBottom: 8 }}>
+            ✨ Neue Ideen erfinden lassen
+          </p>
+          <div className="controls-right" style={{ justifyContent: "flex-start" }}>
+            <div className="seg" role="radiogroup" aria-label="Wie viele Ideen">
+              {[3, 5, 10].map((c) => (
+                <button
+                  key={c}
+                  className={"seg-btn mono" + (genCount === c ? " active" : "")}
+                  onClick={() => setGenCount(c)}
+                >
+                  {c}
+                </button>
+              ))}
             </div>
             <input
+              className="input"
+              style={{ flex: 1, minWidth: 140 }}
               value={theme}
               onChange={(e) => setTheme(e.target.value)}
               maxLength={80}
-              placeholder="thema (optional) — z. b. fake-cocktails"
-              aria-label="thema"
-              className="field min-w-0 flex-1 text-sm"
+              placeholder="Thema (optional) — z. B. Fake-Cocktails"
+              aria-label="Thema"
             />
-            <button onClick={generate} disabled={generating} className="btn btn-positive">
-              ✨ erfinden
+            <button className="btn" onClick={generate} disabled={generating}>
+              ✨ Erfinden
             </button>
           </div>
-          <p aria-live="polite" className="mt-2 font-mono text-[11px] text-ink-dim">
+          <p aria-live="polite" className="mono" style={{ marginTop: 8, fontSize: 12, color: "var(--muted)" }}>
             {generating ? (
-              "haiku denkt sich quatsch-startups aus…"
+              "Haiku denkt sich Quatsch-Startups aus…"
             ) : genError ? (
-              <span className="text-err-soft">{genError}</span>
+              <span className="danger">{genError}</span>
             ) : genResult ? (
               genResult.source === "haiku" ? (
-                `${genResult.n} ideen · ${num(genResult.tokens ?? 0)} tokens · $${(genResult.costUsd ?? 0).toFixed(4)}`
+                `${genResult.n} Ideen · ${num(genResult.tokens ?? 0)} Tokens · $${(genResult.costUsd ?? 0).toFixed(4)}`
               ) : (
-                `${genResult.n} ideen · offline erfunden — ohne ki`
+                `${genResult.n} Ideen · offline erfunden — ohne KI`
               )
             ) : (
-              "haiku denkt sich quatsch-startups aus und hängt sie oben an die liste."
+              "Haiku hängt neue Quatsch-Startups oben an die Liste."
             )}
           </p>
         </div>
 
-        {/* list */}
-        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
-          <button ref={addRef} onClick={add} className="puck cursor-pointer hover:text-ink">
-            ＋ neue idee
+        {/* Liste */}
+        <div className="drawer-body" style={{ gap: 10 }}>
+          <button ref={addRef} className="btn btn-ghost" style={{ alignSelf: "flex-start" }} onClick={add}>
+            ＋ Neue Idee
           </button>
           {generating &&
             Array.from({ length: 3 }, (_, i) => (
-              <div key={i} className="item-row opacity-50">
-                <span className="shimmer font-mono text-xs">··</span>
-                <div className="shimmer font-mono text-xs">wird erfunden…</div>
+              <div key={i} className="item-row" style={{ opacity: 0.5 }}>
+                <span className="mono faint-c">··</span>
+                <div className="mono muted-c" style={{ fontSize: 12 }}>
+                  wird erfunden…
+                </div>
                 <div />
               </div>
             ))}
@@ -211,33 +208,34 @@ export function ItemEditor({
             const invalid = !it.name.trim() || !it.pitch.trim();
             return (
               <div key={i} className="item-row">
-                <span className="pt-6 font-mono text-[11px] text-ink-dim">
+                <span className="mono faint-c" style={{ paddingTop: 26, fontSize: 11 }}>
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <div className="min-w-0 space-y-2">
+                <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 8 }}>
                   <div>
                     <label htmlFor={`it-${i}-name`} className="field-label">
-                      name
+                      Name
                     </label>
                     <input
                       id={`it-${i}-name`}
+                      className="input"
+                      style={{ width: "100%" }}
                       value={it.name}
                       onChange={(e) => update(i, { name: e.target.value })}
                       maxLength={60}
-                      placeholder="z. b. uber für socken"
-                      className="field h-10 w-full text-sm"
+                      placeholder="z. B. Uber für Socken"
                     />
                   </div>
                   <div>
                     <label htmlFor={`it-${i}-pitch`} className="field-label">
-                      pitch — ein satz, der die idee verkauft
+                      Pitch — ein Satz, der die Idee verkauft
                     </label>
                     <textarea
                       id={`it-${i}-pitch`}
                       rows={2}
                       maxLength={200}
-                      placeholder="was macht das startup, und warum klingt es fast plausibel?"
-                      className="field field-area w-full text-sm"
+                      placeholder="Was macht das Startup, und warum klingt es fast plausibel?"
+                      className="input field-area"
                       value={it.pitch}
                       onChange={(e) => update(i, { pitch: e.target.value })}
                       onInput={(e) => autoGrow(e.currentTarget)}
@@ -247,32 +245,32 @@ export function ItemEditor({
                     />
                   </div>
                   {invalid && (
-                    <p className="text-[11px] text-err-soft">name und pitch dürfen nicht leer sein</p>
+                    <p className="danger" style={{ fontSize: 11.5 }}>
+                      Name und Pitch dürfen nicht leer sein
+                    </p>
                   )}
                 </div>
-                <div className="flex flex-col items-stretch gap-1.5">
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   <button
                     onClick={() => update(i, { chaos: !it.chaos })}
                     disabled={mode === "anthropic"}
                     aria-pressed={it.chaos}
                     data-tip={
                       mode === "anthropic"
-                        ? "szenarien wirken nur im demo-modus"
-                        : "lässt diesen agenten im demo-modus absichtlich durchdrehen — vorführung fürs step-limit."
+                        ? "Szenarien wirken nur im Demo-Modus"
+                        : "Lässt diesen Agenten im Demo-Modus absichtlich durchdrehen — Vorführung fürs Step-Cap."
                     }
                     data-tip-pos="bottom"
-                    className={`puck h-9 cursor-pointer justify-center px-2.5 ${
-                      it.chaos ? "border-err/40 text-err-soft" : "opacity-60 hover:opacity-100"
-                    } disabled:cursor-not-allowed disabled:opacity-30`}
+                    className={"btn" + (it.chaos ? " btn-kill" : " btn-ghost")}
+                    style={{ fontSize: 12, padding: "5px 10px" }}
                   >
-                    💥 chaos
+                    💥
                   </button>
                   <button
                     onClick={() => remove(i)}
-                    aria-label={`idee löschen: ${it.name || `nr. ${i + 1}`}`}
-                    data-tip="idee löschen"
-                    data-tip-pos="bottom"
-                    className="puck h-9 cursor-pointer justify-center px-2.5 hover:border-err/40 hover:text-err-soft"
+                    aria-label={`Idee löschen: ${it.name || `Nr. ${i + 1}`}`}
+                    className="btn btn-ghost"
+                    style={{ fontSize: 12, padding: "5px 10px" }}
                   >
                     ✕
                   </button>
@@ -282,25 +280,22 @@ export function ItemEditor({
           })}
         </div>
 
-        {/* footer */}
-        <div className="mt-3 border-t border-white/5 pt-3">
+        {/* Footer */}
+        <div style={{ borderTop: "1px solid var(--line)", padding: "12px 24px 18px" }}>
           {chaosPresetActive && (
-            <p className="mb-2 font-mono text-[11px] text-warn-soft">
-              ⚠ preset „chaos-crew“ aktiv — der nächste lauf nutzt die chaos-items, nicht diese
-              liste.
+            <p className="warn mono" style={{ fontSize: 11.5, marginBottom: 6 }}>
+              ▲ Szenario „Agenten drehen durch“ aktiv — der nächste Lauf nutzt die Chaos-Items,
+              nicht diese Liste.
             </p>
           )}
-          <p className="font-mono text-[11px] text-ink-dim">
-            {n} ideen ·{" "}
-            <span data-tip="ein call = eine anfrage ans sprachmodell. pro idee typisch: research, draft, critique, finalize.">
-              ~{n * 4} ki-calls (4 pro agent)
+          <p className="mono" style={{ fontSize: 11.5, color: "var(--muted)" }}>
+            {n} Ideen ·{" "}
+            <span data-tip="Ein Call = eine Anfrage ans Sprachmodell. Pro Idee typisch: Recherche, Entwurf, Kritik, Finalisieren.">
+              ~{n * 4} KI-Calls
             </span>{" "}
-            · ≈ {num(n * 4 * 310)} tokens · demo 0 $ · echte ki (haiku) ≈{" "}
+            · ≈ {num(n * 4 * 310)} Tokens · Demo 0 $ · Claude Haiku ≈{" "}
             {(n * 0.015).toFixed(2).replace(".", ",")} $
           </p>
-          <button onClick={onClose} className="btn mt-2 w-full">
-            fertig
-          </button>
         </div>
       </aside>
     </div>

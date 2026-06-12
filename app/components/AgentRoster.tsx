@@ -1,134 +1,116 @@
 "use client";
 
 import { memo } from "react";
-import type { AgentState } from "@/src/types";
-import { parseVerdict, PIPELINE, pipelineStages } from "./derive";
-import { END_REASON_LABEL, num, STATUS_CHIP, STATUS_LABEL } from "./labels";
+import type { AgentState, BatchItem } from "@/src/types";
+import { parseVerdict } from "./derive";
+import { callCount, num, pillFor } from "./labels";
 
-const STAGE_TIP: Record<(typeof PIPELINE)[number], string> = {
-  research: "recherchiert fakten zur idee",
-  draft: "schreibt das bewertungs-memo",
-  critique: "zerpflückt den eigenen entwurf",
-  finalize: "fällt das urteil: invest oder pass",
-};
-
-function PipelineDots({ agent }: { agent: AgentState }) {
-  const stages = pipelineStages(agent);
-  const activeIdx =
-    agent.status === "running" ? PIPELINE.findIndex((s) => !stages[s]) : -1;
+export function StatusPill({ agent }: { agent: AgentState }) {
+  const p = pillFor(agent);
   return (
-    <div className="pipe" aria-label={PIPELINE.join(" · ")}>
-      {PIPELINE.map((s, i) => (
-        <span key={s} className="flex items-center" data-tip={`${s} — ${STAGE_TIP[s]}`}>
-          {i > 0 && <span className="pipe-line" />}
-          <span
-            className={`pipe-dot ${
-              stages[s]
-                ? "pipe-dot-done"
-                : agent.status === "failed" && i === activeFailIdx(agent, stages)
-                  ? "pipe-dot-fail"
-                  : i === activeIdx
-                    ? "pipe-dot-active"
-                    : ""
-            }`}
-          />
-        </span>
-      ))}
+    <span className={"pill pill-" + p.cls}>
+      {agent.status === "running" ? <span className="pulse-dot" /> : null}
+      {p.label}
+    </span>
+  );
+}
+
+function MiniBar({ value, max, danger }: { value: number; max: number; danger: boolean }) {
+  const pct = Math.min(100, (value / max) * 100);
+  return (
+    <div className="minibar">
+      <div className={"minibar-fill" + (danger ? " danger-fill" : "")} style={{ width: pct + "%" }} />
     </div>
   );
 }
 
-function activeFailIdx(
-  agent: AgentState,
-  stages: Record<(typeof PIPELINE)[number], boolean>,
-): number {
-  return PIPELINE.findIndex((s) => !stages[s]);
-}
-
-export const AgentCard = memo(function AgentCard({
+const AgentCard = memo(function AgentCard({
   agent,
   index,
+  pitch,
   maxSteps,
+  selected,
   onClick,
 }: {
   agent: AgentState;
   index: number;
+  pitch: string;
   maxSteps: number;
+  selected: boolean;
   onClick: () => void;
 }) {
+  const p = pillFor(agent);
   const verdict = parseVerdict(agent.result);
-  const summary = agent.result?.replace(/^.*?—\s*/, "");
-  const guardFired = agent.status === "failed" || agent.status === "aborted";
+  const last = agent.trace.length > 0 ? agent.trace[agent.trace.length - 1] : null;
+  const lastText =
+    agent.status === "running" && agent.lastAction ? agent.lastAction : (last?.detail ?? "");
 
   return (
     <button
+      className={"card status-" + p.cls + (selected ? " selected" : "")}
       onClick={onClick}
-      className={`glass lift enter relative flex h-full flex-col items-start p-4 text-left ${agent.status === "running" ? "is-running" : ""}`}
-      style={{ "--i": index } as React.CSSProperties}
       data-agent-id={agent.itemId}
     >
-      {verdict && (
-        <span
-          className={`stamp stamp-in ${verdict === "invest" ? "stamp-invest" : "stamp-pass"}`}
-          data-tip={verdict === "invest" ? "der agent würde investieren" : "der agent winkt ab"}
-        >
-          {verdict === "invest" ? "INVEST" : "PASS"}
+      <div className="card-top">
+        <span className="card-id mono">{String(index + 1).padStart(2, "0")}</span>
+        <StatusPill agent={agent} />
+      </div>
+      <h3 className="card-name">{agent.itemName}</h3>
+      <p className="card-note">
+        {verdict ? (
+          <span className={verdict === "invest" ? "accent" : undefined} style={{ fontWeight: 600 }}>
+            {verdict === "invest" ? "Urteil: Invest" : "Urteil: Pass"}
+          </span>
+        ) : (
+          pitch
+        )}
+      </p>
+      <div className="card-stats mono">
+        <span title="Steps" data-tip={`Maximal ${maxSteps} Schritte pro Agent — dann zieht das Step-Cap die Notbremse.`}>
+          {agent.steps}/{maxSteps} Steps
         </span>
-      )}
-      <div className="flex w-full items-start justify-between gap-2">
-        <PipelineDots agent={agent} />
-        {!verdict && (
-          <span className={`${STATUS_CHIP[agent.status]} shrink-0`}>
-            {STATUS_LABEL[agent.status]}
+        <span title="Tool-Calls">{callCount(agent)} Calls</span>
+        <span title="Tokens">{num(agent.usage.inputTokens + agent.usage.outputTokens)} Tok</span>
+        {agent.strikes > 0 && (
+          <span className="danger" data-tip="Ungültige Tool-Calls. Drei Strikes, und der Agent wird gestoppt.">
+            {agent.strikes} Strikes
           </span>
         )}
       </div>
-      <h3 className="mt-2 pr-16 text-sm font-semibold leading-tight">{agent.itemName}</h3>
-      <p className="mt-1.5 font-mono text-[11px] text-ink-dim">
-        <span data-tip={`jeder agent darf maximal ${maxSteps} schritte — dann zieht das step-limit die notbremse.`}>
-          step {agent.steps}/{maxSteps}
-        </span>
-        {agent.strikes > 0 && (
-          <span className="text-err-soft" data-tip="ungültige tool-calls. drei strikes, und der agent wird gestoppt.">
-            {" "}
-            · {agent.strikes} strikes
-          </span>
-        )}
-        {" · "}
-        {num(agent.usage.inputTokens + agent.usage.outputTokens)} tok · ${agent.costUsd.toFixed(4)}
-      </p>
-      {agent.status === "running" && agent.lastAction && (
-        <p className="shimmer mt-1.5 truncate font-mono text-[11px]">{agent.lastAction}</p>
-      )}
-      {guardFired && agent.endReason && (
-        <p className="fuse mt-2">
-          ⚡ sicherung ausgelöst · {END_REASON_LABEL[agent.endReason]}
-        </p>
-      )}
-      {verdict && summary && (
-        <p className="mt-1.5 line-clamp-2 text-xs text-ink-dim">{summary}</p>
-      )}
+      <MiniBar
+        value={agent.steps}
+        max={maxSteps}
+        danger={agent.status === "failed" || agent.status === "aborted"}
+      />
+      <p className="card-last mono">{lastText}</p>
     </button>
   );
 });
 
 export const AgentRoster = memo(function AgentRoster({
   agents,
+  items,
   maxSteps,
+  selectedId,
   onSelect,
 }: {
   agents: AgentState[];
+  items: BatchItem[];
   maxSteps: number;
+  selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
+  const pitchById = new Map(items.map((i) => [i.id, i.pitch]));
   return (
-    <section className="grid grid-cols-1 gap-3 sm:auto-rows-fr sm:grid-cols-2">
+    <section className="grid" data-tour="grid">
       {agents.map((a, i) => (
         <AgentCard
           key={a.itemId}
           agent={a}
           index={i}
+          pitch={pitchById.get(a.itemId) ?? ""}
           maxSteps={maxSteps}
+          selected={selectedId === a.itemId}
           onClick={() => onSelect(a.itemId)}
         />
       ))}

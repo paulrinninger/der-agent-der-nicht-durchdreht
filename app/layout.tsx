@@ -1,47 +1,37 @@
 import type { Metadata } from "next";
-import { Instrument_Serif, JetBrains_Mono, Space_Grotesk } from "next/font/google";
-import { Starfield } from "./components/Starfield";
+import { IBM_Plex_Mono, Schibsted_Grotesk } from "next/font/google";
 import "./globals.css";
 
-const spaceGrotesk = Space_Grotesk({
+const schibsted = Schibsted_Grotesk({
   subsets: ["latin"],
-  weight: ["500", "700"],
-  variable: "--font-space-grotesk",
+  weight: ["400", "500", "700", "800"],
+  variable: "--font-schibsted",
   display: "swap",
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const plexMono = IBM_Plex_Mono({
   subsets: ["latin"],
-  weight: ["400", "600"],
-  variable: "--font-jetbrains-mono",
-  display: "swap",
-});
-
-const instrumentSerif = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
-  style: "italic",
-  variable: "--font-instrument-serif",
+  weight: ["400", "500"],
+  variable: "--font-plex-mono",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Der Agent, der nicht durchdreht",
+  title: "Diffusion · Agent-Batch Dashboard",
   description:
-    "Agent-Batch-Orchestrator: Concurrency-Limit, Tool-Call-Validierung, Step-/Budget-Caps, Kill-Switch.",
+    "Der Agent, der nicht durchdreht: Concurrency-Limit, Tool-Call-Validierung, Step-/Budget-Caps, Kill-Switch.",
 };
+
+/** theme before hydration — no light/dark flash */
+const themeBootstrap = `try{var t=localStorage.getItem("diffusion-dash-theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t}catch(e){}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="de"
-      className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} ${instrumentSerif.variable}`}
-    >
-      <body>
-        <Starfield />
-        <div className="spotlight" aria-hidden />
-        {children}
-      </body>
+    <html lang="de" data-theme="light" className={`${schibsted.variable} ${plexMono.variable}`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
+      </head>
+      <body>{children}</body>
     </html>
   );
 }

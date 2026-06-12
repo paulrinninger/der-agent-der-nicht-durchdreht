@@ -233,27 +233,31 @@ export function Tour({
         aria-modal="true"
         aria-labelledby="tour-title"
         tabIndex={-1}
-        className="tour-pop glass-sheet"
+        className="tour-pop"
         onKeyDown={trapTab}
       >
         <div key={idx} className="tour-step-in">
           <p className="tour-kicker">
-            schritt {idx + 1}/{STEPS.length}
+            Schritt {idx + 1}/{STEPS.length}
           </p>
-          <h3 id="tour-title" className="font-display mt-1 text-lg font-semibold lowercase">
+          <h3 id="tour-title" style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.015em", marginTop: 4 }}>
             {step.title}
           </h3>
-          <div aria-live="polite" className="mt-2 text-sm leading-relaxed text-ink-dim">
+          <div
+            aria-live="polite"
+            style={{ marginTop: 8, fontSize: 13.5, lineHeight: 1.55, color: "var(--muted)" }}
+          >
             {step.body}
           </div>
           {step.action &&
             (fired ? (
-              <p className="tour-wait mt-4">
-                <span className="pipe-dot pipe-dot-active h-1.5 w-1.5" /> startet…
+              <p className="tour-wait" style={{ marginTop: 14 }}>
+                <span className="pulse-dot" /> Startet…
               </p>
             ) : (
               <button
-                className="btn btn-positive mt-4 w-full"
+                className="btn btn-primary"
+                style={{ marginTop: 14, width: "100%" }}
                 disabled={busy}
                 onClick={() => {
                   step.action!.run(ctxRef.current);
@@ -263,30 +267,36 @@ export function Tour({
                 {step.action.label}
               </button>
             ))}
-          <div className="mt-4 flex items-center justify-between gap-3">
+          <div
+            style={{
+              marginTop: 16,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+            }}
+          >
             <div className="tour-dots" aria-hidden>
               {STEPS.map((s, i) => (
                 <span key={s.id} className={`tour-dot ${i === idx ? "tour-dot-active" : ""}`} />
               ))}
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                className="text-xs text-ink-dim hover:text-ink"
-                onClick={() => close("skipped")}
-              >
-                überspringen
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <button className="btn btn-ghost" style={{ fontSize: 12, padding: "5px 10px" }} onClick={() => close("skipped")}>
+                Überspringen
               </button>
               {idx > 0 && (
-                <button className="btn h-9 min-h-0 px-3 text-xs" onClick={() => go(-1)}>
-                  zurück
+                <button className="btn" style={{ fontSize: 12, padding: "5px 12px" }} onClick={() => go(-1)}>
+                  Zurück
                 </button>
               )}
               <button
-                className="btn h-9 min-h-0 px-3 text-xs"
+                className="btn"
+                style={{ fontSize: 12, padding: "5px 12px" }}
                 disabled={waiting}
                 onClick={() => go(1)}
               >
-                {waiting ? "gleich…" : idx === STEPS.length - 1 ? "fertig" : "weiter"}
+                {waiting ? "Gleich…" : idx === STEPS.length - 1 ? "Fertig" : "Weiter"}
               </button>
             </div>
           </div>

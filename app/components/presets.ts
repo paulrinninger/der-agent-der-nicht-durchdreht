@@ -1,15 +1,15 @@
 import type { MockScenario } from "@/src/types";
 
 /**
- * The three demo runs, mirroring the diffusion task page 1:1:
- * "kontrollierter lauf · ok" · "agent dreht durch · gestoppt" · "budget".
+ * Die drei Demo-Läufe (Szenario-Tabs im Design-Mockup). Anders als das
+ * Mockup hat die echte Engine bewusst KEINEN „naiv, ohne limits"-Modus —
+ * die Caps sind nicht abschaltbar. Budget-Crunch zeigt stattdessen ehrlich,
+ * was der Kill-Switch tut, wo der naive Bau explodieren würde.
  */
 
 export interface PresetDef {
   key: "kontrolliert" | "chaos" | "crunch";
   label: string;
-  tag: string;
-  tagClass: string;
   hint: string;
   budget: number;
   concurrency: number;
@@ -18,28 +18,22 @@ export interface PresetDef {
 export const PRESETS: PresetDef[] = [
   {
     key: "kontrolliert",
-    label: "kontrollierter lauf",
-    tag: "ok",
-    tagClass: "text-ok-soft",
-    hint: "15 normale items, 200.000 tokens — läuft sauber durch. der happy path.",
+    label: "Kontrollierter Lauf",
+    hint: "Limit 3, harte Caps, jeder Tool-Call validiert. Die Agenten finden ihr Ende selbst — der Batch bleibt unter Budget.",
     budget: 200_000,
     concurrency: 3,
   },
   {
     key: "chaos",
-    label: "chaos-crew",
-    tag: "gestoppt",
-    tagClass: "text-err-soft",
-    hint: "6 von 15 agenten drehen absichtlich durch — zeigt live, wie die sicherungen greifen (nur demo-modus).",
+    label: "Agenten drehen durch",
+    hint: "Sechs von 15 Agenten benehmen sich absichtlich daneben — Runaways, kaputte Argumente, erfundene Tools. Die Sicherungen stoppen jeden einzeln, der Rest läuft sauber weiter (nur Demo-Modus).",
     budget: 200_000,
     concurrency: 3,
   },
   {
     key: "crunch",
-    label: "budget-crunch",
-    tag: "budget",
-    tagClass: "text-warn-soft",
-    hint: "nur 10.000 tokens für 15 items — das budget reißt mittendrin und der lauf stoppt sauber.",
+    label: "Budget-Crunch",
+    hint: "Nur 10.000 Tokens für 15 Items. Das Budget reißt mittendrin — der Kill-Switch stoppt den Lauf sauber, statt es erst nach 10.000 verbrannten Tokens zu merken.",
     budget: 10_000,
     concurrency: 3,
   },
@@ -51,7 +45,7 @@ export interface PresetItem {
   scenario: MockScenario;
 }
 
-/** 6 misbehaving agents (4 different guards fire) + 9 honest ones */
+/** 6 Störenfriede (4 verschiedene Sicherungen feuern) + 9 ehrliche Items */
 export const CHAOS_ITEMS: PresetItem[] = [
   { name: "KI-Staubsauger mit Doktortitel", pitch: "Promoviert in Krümelforschung. Recherchiert lieber, statt je zu saugen.", scenario: "runaway" },
   { name: "Endlos-Podcast-Generator", pitch: "Eine Folge, die nie endet. Unser Agent übrigens auch nicht.", scenario: "runaway" },

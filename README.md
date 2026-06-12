@@ -30,24 +30,26 @@ Ein voller Echt-Lauf kostet ca. 0,10–0,30 $ (Haiku: $1/$5 pro MTok, Kosten liv
 
 ## Geführte Tour
 
-Beim ersten Besuch bietet sich eine **interaktive Tour** an (jederzeit neu über den
-✦-Knopf oben rechts): 11 Schritte, die nicht nur erklären, sondern **mitten in der Tour
-einen echten Mock-Lauf starten** und live kommentieren — wie die Agenten in die Slots
-docken, wie der KI-Toaster durchdreht und vom Step-Cap gestoppt wird, und warum das
+Beim ersten Besuch bietet sich eine **interaktive Tour** an (jederzeit neu über
+„✦ Tour" oben rechts): 11 Schritte, die nicht nur erklären, sondern **mitten in der
+Tour einen echten Demo-Lauf starten** und live kommentieren — wie die Agenten
+loslegen, wie der KI-Toaster durchdreht und vom Step-Cap gestoppt wird, und warum das
 Budget am Ende gehalten hat. Spotlight-Engine ohne Dependencies (eine JS-gelerpte Iris,
 die zwischen den Elementen gleitet), Esc bricht ab, ←/→ navigieren.
 
-## Mission-Control-UI
+## Dashboard
 
-Das Dashboard visualisiert die Orchestrierung selbst, nicht nur Ergebnisse: Das
-**Scheduler-Deck** zeigt das Concurrency-Limit physisch als Worker-Bays (Agenten docken
-live an und ab, die Warteschlange wartet daneben), der **Budget-Kern** zeigt
-`used + reserved` als Arc-Gauge — die schraffierten Reservierungen sind die
-reserve→commit-Mechanik in Echtzeit. Dazu: Live-**Telemetrie** jedes Tool-Calls,
-Pipeline-Dots pro Agent, **Hold-to-Kill** (700 ms halten — kein versehentlicher Stopp)
-und ein **Budget-Crunch-Preset** (10k), das den Budget-Kill-Switch live demonstriert.
-Alles davon ist Client-seitig aus dem bestehenden Run-State abgeleitet — null Änderung
-am Kern.
+Helles Editorial-Design (Hell/Dunkel-Toggle, persistiert): Szenario-Tabs spiegeln die
+drei Läufe der Aufgaben-Seite — **Kontrollierter Lauf**, **Agenten drehen durch**,
+**Budget-Crunch**. Der **Stats-Strip** zeigt Aktiv/Limit, Warteschlange, Fertig,
+Gestoppt, Abgebrochen, Kosten und das globale Token-Budget als Balken — die
+schraffierten Reservierungen sind die reserve→commit-Mechanik in Echtzeit, der
+Peak-Marker beweist die Invariante. Ein **Banner** kommentiert das jüngste Ereignis
+(ausgelöste Sicherung, Budget-Stopp, saubere Bilanz), jede Agent-Karte trägt
+Status-Pill, Step-Minibar und den letzten Tool-Call; Klick öffnet den **Agent-Trace**.
+Dazu **Hold-to-Kill** (700 ms halten — kein versehentlicher Stopp) und die
+**Lauf-Timeline** (Gantt über alle Agenten). Alles Client-seitig aus dem Run-State
+abgeleitet — null Änderung am Kern.
 
 ## Eigene Items, KI-Generator, Demo-Läufe, Timeline
 

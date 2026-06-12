@@ -1,9 +1,11 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useEffect, useState } from "react";
 import type { RunState } from "@/src/types";
 import { formatDuration } from "./derive";
 import { num } from "./labels";
+
+const THEME_KEY = "diffusion-dash-theme";
 
 function statusLine(run: RunState): string {
   const agents = Object.values(run.agents);
@@ -12,14 +14,14 @@ function statusLine(run: RunState): string {
   ).length;
   const running = agents.filter((a) => a.status === "running").length;
   if (run.status === "running") {
-    return `läuft — ${terminal} von ${agents.length} fertig · ${running}/${run.config.concurrency} slots belegt · ${num(run.budget.used)} tokens verbraucht`;
+    return `Läuft — ${terminal} von ${agents.length} fertig · ${running}/${run.config.concurrency} Slots belegt · ${num(run.budget.used)} Tokens`;
   }
   if (run.status === "completed") {
-    return `fertig in ${formatDuration((run.endedAt ?? run.startedAt) - run.startedAt)} · ${num(run.budget.used)} tokens · $${run.costUsd.toFixed(4)} — budget gehalten.`;
+    return `Fertig in ${formatDuration((run.endedAt ?? run.startedAt) - run.startedAt)} · ${num(run.budget.used)} Tokens · $${run.costUsd.toFixed(4)} — Budget gehalten.`;
   }
   const reason =
-    run.stopReason === "kill" ? "kill-switch" : run.stopReason === "budget" ? "budget" : "fehler";
-  return `gestoppt (${reason}) — „fortsetzen“ startet nur unfertige agenten, fertige werden nicht doppelt bezahlt.`;
+    run.stopReason === "kill" ? "Kill-Switch" : run.stopReason === "budget" ? "Budget" : "Fehler";
+  return `Gestoppt (${reason}) — „Fortsetzen“ startet nur unfertige Agenten.`;
 }
 
 export const MissionHeader = memo(function MissionHeader({
@@ -29,39 +31,64 @@ export const MissionHeader = memo(function MissionHeader({
   run: RunState | null;
   onTour: () => void;
 }) {
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    const t = document.documentElement.dataset.theme;
+    if (t === "dark") setTheme("dark");
+  }, []);
+
+  const toggleTheme = (): void => {
+    const next = theme === "light" ? "dark" : "light";
+    setTheme(next);
+    document.documentElement.dataset.theme = next;
+    try {
+      localStorage.setItem(THEME_KEY, next);
+    } catch {}
+  };
+
   return (
-    <header className="enter relative mb-7">
-      <button
-        onClick={onTour}
-        aria-label="produkt-tour starten"
-        className="puck absolute right-0 top-1 cursor-pointer transition-colors hover:text-ink"
-      >
-        ✦ tour
-      </button>
-      <h1 className="font-display pr-20 text-3xl font-bold lowercase tracking-tight sm:text-4xl">
-        der agent, der <em className="accent-serif">nicht durchdreht</em>
-        <span className="text-accent">.</span>
-      </h1>
-      {/* permanent explainer — never disappears */}
-      <p className="mt-2 max-w-[44rem] text-sm leading-relaxed text-ink-dim">
-        15 quatsch-startups, je ein ki-agent, der sie bewertet — ein scheduler hält parallelität,
-        schritte und token-budget hart im zaum.
-      </p>
-      {/* status only when a run exists, with a status dot */}
-      {run && (
-        <p className="mt-1.5 flex items-center gap-1.5 font-mono text-xs text-ink-dim">
-          <span
-            className={`h-1.5 w-1.5 rounded-full ${
-              run.status === "running"
-                ? "pipe-dot pipe-dot-active"
-                : run.status === "completed"
-                  ? "bg-ok"
-                  : "bg-warn"
-            }`}
-          />
-          {statusLine(run)}
+    <>
+      <header className="masthead">
+        <div className="brand">
+          <span className="brand-mark" />
+          <span className="label">Diffusion · Take-Home</span>
+        </div>
+        <div className="controls-right">
+          <button className="btn btn-ghost" onClick={onTour} aria-label="Produkt-Tour starten">
+            ✦ Tour
+          </button>
+          <button className="btn btn-ghost" onClick={toggleTheme}>
+            {theme === "light" ? "Dunkel" : "Hell"}
+          </button>
+        </div>
+      </header>
+
+      <section className="hero">
+        <h1>Der Agent, der nicht durchdreht.</h1>
+        <p className="hero-sub">
+          Quatsch-Items, je ein kleiner Agent mit Mock-Tools. Der Scheduler hält Concurrency, Caps
+          und das globale Budget zusammen — egal, was die Agenten vorhaben.
         </p>
-      )}
-    </header>
+        {run && (
+          <p className="hero-status mono" data-tour="status">
+            <span
+              className={run.status === "running" ? "pulse-dot" : "brand-mark"}
+              style={
+                run.status === "running"
+                  ? undefined
+                  : {
+                      width: 8,
+                      height: 8,
+                      background:
+                        run.status === "completed" ? "var(--accent)" : "var(--warn)",
+                    }
+              }
+            />
+            {statusLine(run)}
+          </p>
+        )}
+      </section>
+    </>
   );
 });

@@ -18,7 +18,7 @@ export interface TourStep {
   action?: { label: string; run: (ctx: TourCtx) => void };
   /** auto-advance the instant this flips true (re-evaluated on every run flush) */
   advanceWhen?: (run: RunState | null) => boolean;
-  /** gates »weiter« (shows "gleich…") until true — or until waitTimeoutMs unlocks it */
+  /** gates »Weiter« (shows "Gleich…") until true — or until waitTimeoutMs unlocks it */
   waitFor?: (run: RunState | null) => boolean;
   waitTimeoutMs?: number;
   skipIf?: (ctx: TourCtx) => boolean;
@@ -28,72 +28,56 @@ export interface TourStep {
 const toasterDone = (r: RunState | null): boolean =>
   !r ||
   r.status !== "running" ||
-  !r.agents["toaster"] || // custom items without the toaster: moot
+  !r.agents["toaster"] ||
   ["failed", "aborted"].includes(r.agents["toaster"]?.status ?? "");
 
 export const STEPS: TourStep[] = [
   {
     id: "welcome",
-    title: (
-      <>
-        willkommen im <em className="accent-serif">mission control</em>.
-      </>
-    ),
+    title: <>Willkommen im Dashboard.</>,
     body: (
       <>
-        15 startup-ideen von fragwürdiger genialität, 15 ki-agenten, die sie bewerten — und ein
-        scheduler, der dafür sorgt, dass keiner durchdreht. die tour dauert zwei minuten und
-        startet gleich einen echten lauf. kostet nichts, läuft im demo-modus.
+        15 Startup-Ideen von fragwürdiger Genialität, 15 KI-Agenten, die sie bewerten — und ein
+        Scheduler, der dafür sorgt, dass keiner durchdreht. Die Tour dauert zwei Minuten und
+        startet gleich einen echten Lauf. Kostet nichts, läuft im Demo-Modus.
       </>
     ),
   },
   {
-    id: "deck",
-    target: '[data-tour="deck"]',
+    id: "tabs",
+    target: '[data-tour="tabs"]',
     placement: "bottom",
-    title: (
-      <>
-        das concurrency-limit. zum <em className="accent-serif">anfassen</em>.
-      </>
-    ),
+    title: <>Drei Läufe, eine Pointe.</>,
     body: (
       <>
-        drei slots, mehr nicht. egal ob 15 items oder 200 — hier arbeiten nie mehr agenten
-        gleichzeitig, als der worker-pool erlaubt. kein nacktes promise.all über die liste.
+        Kontrolliert läuft sauber durch. Bei „Agenten drehen durch“ benehmen sich sechs Agenten
+        absichtlich daneben. Und Budget-Crunch zeigt, was der Kill-Switch tut, wo der naive Bau
+        einfach weiterbrennen würde.
       </>
     ),
   },
   {
-    id: "queue",
-    target: '[data-tour="queue"]',
-    placement: "top",
-    title: (
-      <>
-        die warteschlange. <em className="accent-serif">geduldig</em>.
-      </>
-    ),
+    id: "stats",
+    target: '[data-tour="stats"]',
+    placement: "bottom",
+    title: <>Das Concurrency-Limit, live.</>,
     body: (
       <>
-        wer keinen slot hat, wartet hier. in fester reihenfolge, deterministisch. kein drängeln —
-        der scheduler zieht das nächste item, sobald ein slot frei wird.
+        Nie mehr als drei Agenten gleichzeitig — egal ob 15 Items oder 200. Wer keinen Slot hat,
+        steht in der Warteschlange. Kein nacktes promise.all über die Liste.
       </>
     ),
   },
   {
-    id: "gauge",
-    target: '[data-tour="gauge"]',
-    placement: "left",
-    title: (
-      <>
-        das budget. der einzige <em className="accent-serif">erwachsene</em> hier.
-      </>
-    ),
+    id: "budget",
+    target: '[data-tour="budget"]',
+    placement: "bottom",
+    title: <>Das Budget. Der einzige Erwachsene hier.</>,
     body: (
       <>
-        bevor ein agent auch nur einen api-call macht, muss er tokens reservieren — das ist die
-        schraffur im ring. die invariante: verbraucht + reserviert ≤ limit, zu jedem zeitpunkt.
-        es startet nie ein call, der das budget reißen könnte. erst nach dem call wird der echte
-        verbrauch verbucht.
+        Bevor ein Agent auch nur einen KI-Call macht, muss er Tokens reservieren — das ist der
+        schraffierte Teil des Balkens. Die Invariante: verbraucht + reserviert ≤ Limit, zu jedem
+        Zeitpunkt. Es startet nie ein Call, der das Budget reißen könnte.
       </>
     ),
   },
@@ -101,36 +85,28 @@ export const STEPS: TourStep[] = [
     id: "launch",
     target: '[data-tour="controls"]',
     placement: "bottom",
-    title: (
-      <>
-        genug theorie. <em className="accent-serif">zündung</em>.
-      </>
-    ),
+    title: <>Genug Theorie. Zündung.</>,
     body: (
       <>
-        der knopf hier startet einen echten lauf — 15 agenten, demo-modus, null euro. einer von
-        ihnen wird durchdrehen. das ist absicht. schau hin.
+        Der Knopf hier startet einen echten Lauf — 15 Agenten, Demo-Modus, null Euro. Einer von
+        ihnen wird durchdrehen. Das ist Absicht. Schau hin.
       </>
     ),
-    action: { label: "▶ demo-lauf starten ($0)", run: (c) => c.startMockRun() },
+    action: { label: "▶ Demo-Lauf starten ($0)", run: (c) => c.startMockRun() },
     advanceWhen: (r) => r?.status === "running",
     waitTimeoutMs: 10_000,
     skipIf: (c) => c.isRunning,
   },
   {
-    id: "bays-live",
-    target: '[data-tour="deck"]',
-    placement: "bottom",
-    title: (
-      <>
-        sie <em className="accent-serif">docken</em> an.
-      </>
-    ),
+    id: "grid",
+    target: '[data-tour="grid"]',
+    placement: "top",
+    title: <>Die Agenten arbeiten.</>,
     body: (
       <>
-        jeder agent entscheidet selbst, welche tools er ruft: research, draft, critique,
-        finalize. was er vorschlägt, wird aber erst validiert — erfundene tools und kaputte
-        argumente prallen ab, bevor sie irgendwas anrichten.
+        Jeder Agent entscheidet selbst, welche Tools er ruft: Recherche, Entwurf, Kritik,
+        Finalisieren. Was er vorschlägt, wird aber erst validiert — erfundene Tools und kaputte
+        Argumente prallen ab, bevor sie irgendwas anrichten.
       </>
     ),
     waitFor: (r) =>
@@ -138,37 +114,15 @@ export const STEPS: TourStep[] = [
     waitTimeoutMs: 4_000,
   },
   {
-    id: "ticker",
-    target: '[data-tour="ticker"]',
-    placement: "right",
-    title: (
-      <>
-        die telemetrie. <em className="accent-serif">alles</em> landet hier.
-      </>
-    ),
-    body: (
-      <>
-        jeder tool-call, live, über alle agenten. auch die peinlichen — abgelehnte calls flashen
-        rot. observability ist bei agenten kein luxus, sondern die einzige art zu wissen, was die
-        da eigentlich tun.
-      </>
-    ),
-  },
-  {
     id: "toaster",
-    // custom items may not include the toaster — fall back to the deck
-    target: (c) => (c.run?.agents["toaster"] ? '[data-agent-id="toaster"]' : '[data-tour="deck"]'),
+    target: (c) => (c.run?.agents["toaster"] ? '[data-agent-id="toaster"]' : '[data-tour="grid"]'),
     placement: "left",
-    title: (
-      <>
-        und da ist es <em className="accent-serif">passiert</em>.
-      </>
-    ),
+    title: <>Und da ist es passiert.</>,
     body: (
       <>
-        der ki-toaster will partout nicht aufhören zu recherchieren. ein klassischer runaway.
-        nach exakt 10 steps zieht das step-cap die sicherung: agent gestoppt, als fehler
-        markiert. die anderen 14? haben davon nichts mitbekommen. das ist isolation.
+        Der KI-Toaster will partout nicht aufhören zu recherchieren — ein klassischer Runaway.
+        Nach exakt 10 Steps zieht das Step-Cap die Sicherung: Agent gestoppt, als Fehler markiert.
+        Die anderen 14? Haben davon nichts mitbekommen. Das ist Isolation.
       </>
     ),
     waitFor: toasterDone,
@@ -178,53 +132,55 @@ export const STEPS: TourStep[] = [
     id: "kill",
     target: (c) => (c.isRunning ? '[data-tour="kill"]' : '[data-tour="controls"]'),
     placement: "bottom",
-    title: (
-      <>
-        für notfälle: der <em className="accent-serif">kill-switch</em>.
-      </>
-    ),
+    title: <>Für Notfälle: der Kill-Switch.</>,
     body: (
       <>
-        700 millisekunden halten, dann ist schluss — sofort, auch mitten im http-call. kurz
-        draufkommen zählt absichtlich nicht: ein batch stirbt hier nicht aus versehen. und
-        gestoppt heißt nicht verloren — fortsetzen zahlt fertige agenten nicht doppelt.
+        0,7 Sekunden halten, dann ist Schluss — sofort, auch mitten im HTTP-Call. Kurz
+        draufkommen zählt absichtlich nicht: Ein Batch stirbt hier nicht aus Versehen. Und
+        gestoppt heißt nicht verloren — Fortsetzen zahlt fertige Agenten nicht doppelt.
       </>
     ),
   },
   {
-    id: "finale",
-    target: '[data-tour="finale"]',
-    placement: "bottom",
-    title: (
-      <>
-        <em className="accent-serif">abrechnung</em>.
-      </>
-    ),
+    id: "timeline",
+    target: '[data-tour="timeline"]',
+    placement: "top",
+    title: <>Daten und Fakten.</>,
     body: (
       <>
-        invest, pass, ein gescheiterter toaster — und das budget hat gehalten. hat es übrigens
-        immer: der peak-marker im ring zeigt den höchsten stand von verbraucht + reserviert. läge
-        der je über dem limit, wäre das ein bug. ist er nie.
+        Die Timeline zeigt den ganzen Lauf: ein Balken pro Agent, eine Kerbe pro Tool-Call, rote
+        Kerben für abgelehnte Calls. Wer wann lief, wie lange, und wo eine Sicherung gezogen hat —
+        alles aus den Traces abgeleitet.
       </>
     ),
     waitFor: (r) => !r || r.status !== "running",
     waitTimeoutMs: 12_000,
   },
   {
-    id: "closing",
-    title: (
-      <>
-        das war die tour. <em className="accent-serif">glaub nichts davon</em>.
-      </>
-    ),
+    id: "banner",
+    target: '[data-tour="banner"]',
+    placement: "bottom",
+    title: <>Die Abrechnung.</>,
     body: (
       <>
-        prüf es nach: <code className="font-mono text-ink">npm run eval</code> fährt 16
-        deterministische assertions gegen genau diese mechanik — runaway gestoppt, budget
-        gehalten, isolation bewiesen. exit 0. und wenn du wissen willst, was ein einzelner agent
-        gedacht hat: klick auf seine karte — der trace zeigt jeden schritt. eigene ideen? der
-        „items“-knopf in der leiste öffnet den editor — name, pitch, fertig. auf wunsch erfindet
-        haiku welche dazu. nochmal ansehen? der ✦-knopf oben rechts.
+        Invest, Pass, ein gescheiterter Toaster — und das Budget hat gehalten. Hat es übrigens
+        immer: Der Peak-Marker im Budget-Balken zeigt den höchsten Stand von verbraucht +
+        reserviert. Läge der je über dem Limit, wäre das ein Bug. Ist er nie.
+      </>
+    ),
+    waitFor: (r) => !r || r.status !== "running",
+    waitTimeoutMs: 4_000,
+  },
+  {
+    id: "closing",
+    title: <>Das war die Tour. Glaub nichts davon.</>,
+    body: (
+      <>
+        Prüf es nach: <span className="mono">npm run eval</span> fährt 16 deterministische
+        Assertions gegen genau diese Mechanik — Runaway gestoppt, Budget gehalten, Isolation
+        bewiesen. Exit 0. Klick auf eine Karte zeigt den vollständigen Agent-Trace. Eigene Ideen?
+        Der „Items“-Knopf öffnet den Editor — auf Wunsch erfindet Haiku welche dazu. Nochmal
+        ansehen? „✦ Tour“ oben rechts.
       </>
     ),
   },
