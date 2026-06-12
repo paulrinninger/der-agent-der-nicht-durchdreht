@@ -111,7 +111,6 @@ export class Orchestrator {
     const items = itemsOverride ?? run.config.items;
     const budget = new TokenBudget(run.config.globalTokenBudget, initialUsed);
     const abort = new AbortController();
-    const llm = llmFactory(run.config);
 
     let stopReason: StopReason | undefined;
     const stop = (reason: StopReason, hard: boolean): void => {
@@ -134,6 +133,7 @@ export class Orchestrator {
     };
 
     try {
+      const llm = llmFactory(run.config);
       const pool = await runPool({
         items,
         concurrency: run.config.concurrency,
@@ -179,6 +179,12 @@ export class Orchestrator {
         },
       });
       run.concurrencyPeak = Math.max(run.concurrencyPeak, pool.highWaterMark);
+    } catch (err) {
+      // the run itself broke (e.g. LLM client construction, disk error) —
+      // `done` must still resolve so fire-and-forget callers stay alive
+      stopReason ??= "fatal";
+      run.stopReason = stopReason;
+      console.error(`run ${run.id} fatal:`, err);
     } finally {
       this.active.delete(run.id);
     }
