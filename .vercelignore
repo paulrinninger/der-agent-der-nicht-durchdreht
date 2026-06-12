@@ -1,0 +1,4 @@
+# Secrets bleiben lokal — das Deployment läuft bewusst ohne Key im Demo-Modus.
+.env
+.env.*
+.runs

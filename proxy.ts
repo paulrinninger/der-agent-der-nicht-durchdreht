@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { GATE_COOKIE, GATE_TOKEN } from "@/app/api/_lib/gate";
 
 /** Alles hinter dem Passwort-Gate — außer dem Gate selbst und Next-Assets. */
-export function middleware(req: NextRequest) {
+export default function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (pathname === "/gate" || pathname === "/api/gate") return NextResponse.next();
