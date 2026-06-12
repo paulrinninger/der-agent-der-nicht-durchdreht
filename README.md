@@ -11,10 +11,13 @@ ein globales Token-Budget mit Kill-Switch, im Flug eingehalten.
 **https://der-agent-der-nicht-durchdreht.vercel.app** — Passwort: `lfgo-diffusion`
 (dasselbe wie das der Aufgaben-Seite).
 
-Läuft dort im Demo-Modus: $0, deterministisch, ohne API-Key. Zwei Vercel-Eigenheiten:
-„Fortsetzen" aus dem Checkpoint gilt nur, solange die Serverless-Instanz warm ist
-(Checkpoints liegen in `/tmp`), und nach längerer Inaktivität braucht der erste Klick
-einen Cold-Start-Moment. Lokal (s. Schnellstart) gibt es beides nicht.
+Läuft dort im Demo-Modus: $0, deterministisch, ohne API-Key. Vercel-Eigenheiten,
+bewusst akzeptiert: Der Run-State lebt in-memory in der warmen Instanz (`after()`
+hält sie bis zum Batch-Ende am Leben, SSE streamt davon); „Fortsetzen" aus dem
+Checkpoint gilt nur, solange dieselbe Instanz lebt (Checkpoints in `/tmp`), und nach
+Inaktivität braucht der erste Klick einen Cold-Start-Moment. Für Multi-Instanz-Betrieb
+gehörte der Run-State in Redis/KV — fürs Take-Home out of scope. Lokal
+(s. Schnellstart) gibt es das alles nicht.
 
 ## Schnellstart
 

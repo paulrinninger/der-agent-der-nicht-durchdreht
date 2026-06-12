@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { BATCH_ITEMS } from "@/src/items";
 import { hasApiKey, server } from "@/src/server/instance";
 import { DEFAULTS, type RunConfig, type RunMode } from "@/src/types";
@@ -61,9 +61,10 @@ export async function POST(req: Request) {
   };
 
   const { runId, done } = server.orchestrator.startRun(config);
-  // fire-and-forget: this is a long-lived local Node process, not serverless.
-  // execute() resolves even on fatal errors, the catch is belt-and-braces.
-  void done.catch((err) => console.error(`run ${runId}:`, err));
+  // after(): lokal ein no-op (der Prozess lebt sowieso), auf Serverless hält
+  // es die Instanz bis zum Batch-Ende am Leben — der Lauf friert nicht ein,
+  // wenn der Client direkt nach dem 202 verschwindet.
+  after(() => done.catch((err) => console.error(`run ${runId}:`, err)));
 
   return NextResponse.json({ runId }, { status: 202 });
 }

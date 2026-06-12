@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { server } from "@/src/server/instance";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +24,7 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
   }
 
   const { runId, done } = server.orchestrator.resumeRun(previous);
-  void done.catch((err) => console.error(`resume ${runId}:`, err));
+  // s. runs/route.ts: hält Serverless-Instanzen bis zum Batch-Ende am Leben
+  after(() => done.catch((err) => console.error(`resume ${runId}:`, err)));
   return NextResponse.json({ runId }, { status: 202 });
 }
