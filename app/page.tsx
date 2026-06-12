@@ -1,18 +1,48 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { BATCH_ITEMS } from "@/src/items";
 import type { RunEvent, RunMode, RunState } from "@/src/types";
 import { AgentRoster } from "./components/AgentRoster";
 import { BudgetCore } from "./components/BudgetCore";
 import { ControlsBar } from "./components/ControlsBar";
 import { FinaleBand } from "./components/FinaleBand";
 import { useBurnSeries, useSlotAssignments, useTicker } from "./components/hooks";
+import { ItemEditor, type EditorItem } from "./components/ItemEditor";
 import { MissionHeader } from "./components/MissionHeader";
+import { CHAOS_ITEMS, type PresetDef } from "./components/presets";
+import { RunTimeline } from "./components/RunTimeline";
 import { SchedulerDeck } from "./components/SchedulerDeck";
 import { Ticker } from "./components/Ticker";
 import { TraceDrawer } from "./components/TraceDrawer";
 import { makePreviewRun } from "./components/tour/preview";
 import { Tour } from "./components/tour/Tour";
+
+const ITEMS_LS_KEY = "agency.items.v1";
+const DEFAULT_EDITOR_ITEMS: EditorItem[] = BATCH_ITEMS.map((i) => ({
+  name: i.name,
+  pitch: i.pitch,
+  chaos: false,
+}));
+
+function readStoredItems(): EditorItem[] | null {
+  try {
+    const raw = localStorage.getItem(ITEMS_LS_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { v?: number; items?: unknown };
+    if (parsed.v !== 1 || !Array.isArray(parsed.items)) return null;
+    const items = parsed.items
+      .map((i) => ({
+        name: String((i as EditorItem).name ?? "").slice(0, 60),
+        pitch: String((i as EditorItem).pitch ?? "").slice(0, 200),
+        chaos: Boolean((i as EditorItem).chaos),
+      }))
+      .filter((i) => i.name || i.pitch);
+    return items.length > 0 ? items : null;
+  } catch {
+    return null;
+  }
+}
 
 export default function MissionControl() {
   const [run, setRun] = useState<RunState | null>(null);
@@ -24,6 +54,24 @@ export default function MissionControl() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [customItems, setCustomItems] = useState<EditorItem[] | null>(null);
+  const [preset, setPreset] = useState<PresetDef["key"] | null>("kontrolliert");
+
+  // hydrate custom items after mount (SSR-safe), persist on change
+  useEffect(() => {
+    setCustomItems(readStoredItems());
+  }, []);
+  const changeItems = useCallback((items: EditorItem[] | null) => {
+    setCustomItems(items);
+    setPreset(null);
+    try {
+      if (items) localStorage.setItem(ITEMS_LS_KEY, JSON.stringify({ v: 1, items }));
+      else localStorage.removeItem(ITEMS_LS_KEY);
+    } catch {
+      /* quota/private mode: session-only */
+    }
+  }, []);
 
   const esRef = useRef<EventSource | null>(null);
   // rAF coalescing: agent_update storms (~25–40/s in fast mock runs) collapse
@@ -116,8 +164,8 @@ export default function MissionControl() {
     }
   };
 
-  // tour-controlled start: always mock/standard (a tour never starts a paid
-  // run), and the controls UI is synced to what actually launches
+  // tour-controlled start: always mock/standard/default items (a tour never
+  // starts a paid run), and the controls UI is synced to what actually launches
   const startTourRun = useCallback(() => {
     setMode("mock");
     setConcurrency(3);
@@ -125,6 +173,31 @@ export default function MissionControl() {
     void post("/api/runs", { mode: "mock", concurrency: 3, globalTokenBudget: 200_000 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const applyPreset = (p: PresetDef): void => {
+    setPreset(p.key);
+    setBudget(p.budget);
+    setConcurrency(p.concurrency);
+  };
+
+  const startRun = (): void => {
+    const startItems =
+      preset === "chaos"
+        ? CHAOS_ITEMS.map(({ name, pitch, scenario }) => ({ name, pitch, scenario }))
+        : customItems
+            ?.filter((i) => i.name.trim() && i.pitch.trim())
+            .map((i) => ({
+              name: i.name,
+              pitch: i.pitch,
+              ...(i.chaos ? { scenario: "runaway" as const } : {}),
+            }));
+    void post("/api/runs", {
+      mode,
+      concurrency,
+      globalTokenBudget: budget,
+      ...(startItems && startItems.length > 0 ? { items: startItems } : {}),
+    });
+  };
 
   // render-only preview while the tour is open on an empty dashboard — gives
   // the spotlight real targets (empty bays, full queue, 0% gauge). All logic
@@ -153,14 +226,24 @@ export default function MissionControl() {
         mode={mode}
         onMode={setMode}
         concurrency={concurrency}
-        onConcurrency={setConcurrency}
+        onConcurrency={(n) => {
+          setConcurrency(n);
+          setPreset(null);
+        }}
         budget={budget}
-        onBudget={setBudget}
+        onBudget={(n) => {
+          setBudget(n);
+          setPreset(null);
+        }}
+        preset={preset}
+        onPreset={applyPreset}
+        itemCount={preset === "chaos" ? CHAOS_ITEMS.length : (customItems ?? DEFAULT_EDITOR_ITEMS).length}
+        onOpenItems={() => setEditorOpen(true)}
         hasApiKey={hasApiKey}
         isRunning={isRunning}
         canResume={canResume}
         busy={busy}
-        onStart={() => post("/api/runs", { mode, concurrency, globalTokenBudget: budget })}
+        onStart={startRun}
         onResume={() => run && post(`/api/runs/${run.id}/resume`)}
         onKill={() => run && post(`/api/runs/${run.id}/kill`)}
       />
@@ -183,6 +266,8 @@ export default function MissionControl() {
               />
             </div>
           </div>
+
+          {run && run.id !== "tour-preview" && <RunTimeline run={run} live={isRunning} />}
 
           {isTerminal && run && <FinaleBand run={run} />}
 
@@ -216,6 +301,16 @@ export default function MissionControl() {
       )}
 
       {selectedAgent && <TraceDrawer agent={selectedAgent} onClose={() => setSelected(null)} />}
+
+      <ItemEditor
+        open={editorOpen}
+        items={customItems}
+        defaults={DEFAULT_EDITOR_ITEMS}
+        mode={mode}
+        chaosPresetActive={preset === "chaos"}
+        onChange={changeItems}
+        onClose={() => setEditorOpen(false)}
+      />
 
       <Tour
         open={tourOpen}

@@ -192,6 +192,20 @@ export function useBurnSeries(run: RunState | null, max = 60): BurnPoint[] {
   return pts.current;
 }
 
+// ---------- wall clock for live views ----------
+
+/** ticks every 500ms while active (timeline now-cursor), static otherwise */
+export function useNow(active: boolean): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!active) return;
+    setNow(Date.now());
+    const t = setInterval(() => setNow(Date.now()), 500);
+    return () => clearInterval(t);
+  }, [active]);
+  return now;
+}
+
 // ---------- hold-to-kill ----------
 
 /**

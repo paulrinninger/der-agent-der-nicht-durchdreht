@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { BATCH_ITEMS } from "@/src/items";
 import { hasApiKey, server } from "@/src/server/instance";
 import { DEFAULTS, type RunConfig, type RunMode } from "@/src/types";
+import { itemsPayloadSchema, toBatchItems } from "../_lib/items";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -33,6 +34,21 @@ export async function POST(req: Request) {
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const mode: RunMode = body.mode === "anthropic" && hasApiKey() ? "anthropic" : "mock";
+
+  // optional custom items — validated, slugified, deduped; absent => defaults
+  let items = BATCH_ITEMS;
+  if (Array.isArray(body.items) && body.items.length > 0) {
+    const parsed = itemsPayloadSchema.safeParse(body.items);
+    if (!parsed.success) {
+      const first = parsed.error.issues[0];
+      return NextResponse.json(
+        { error: `items ungültig: ${first.path.map(String).join(".")} — ${first.message}` },
+        { status: 400 },
+      );
+    }
+    items = toBatchItems(parsed.data);
+  }
+
   const config: RunConfig = {
     mode,
     concurrency: clampInt(body.concurrency, 1, 8, DEFAULTS.concurrency),
@@ -41,7 +57,7 @@ export async function POST(req: Request) {
     maxStrikes: DEFAULTS.maxStrikes,
     maxTokensPerCall: DEFAULTS.maxTokensPerCall,
     globalTokenBudget: clampInt(body.globalTokenBudget, 1_000, 2_000_000, DEFAULTS.globalTokenBudget),
-    items: BATCH_ITEMS,
+    items,
   };
 
   const { runId, done } = server.orchestrator.startRun(config);

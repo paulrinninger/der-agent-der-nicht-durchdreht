@@ -35,6 +35,13 @@ export const BudgetCore = memo(function BudgetCore({
       </div>
 
       <div className="relative mx-auto mt-1 w-full max-w-[230px]" data-tour="gauge">
+        {/* keyed remount replays a 600ms pulse whenever ~500 tokens commit —
+            deliberately NOT keying the Gauge itself (would reset transitions) */}
+        <div
+          key={Math.round(budget.used / 500)}
+          className="gauge-blip pointer-events-none absolute inset-4 rounded-full"
+          aria-hidden
+        />
         <Gauge
           usedPct={Math.round(pct(budget.used) * 10) / 10}
           reservedPct={Math.round(pct(budget.reserved) * 10) / 10}

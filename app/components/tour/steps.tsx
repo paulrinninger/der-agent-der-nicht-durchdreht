@@ -28,6 +28,7 @@ export interface TourStep {
 const toasterDone = (r: RunState | null): boolean =>
   !r ||
   r.status !== "running" ||
+  !r.agents["toaster"] || // custom items without the toaster: moot
   ["failed", "aborted"].includes(r.agents["toaster"]?.status ?? "");
 
 export const STEPS: TourStep[] = [
@@ -155,7 +156,8 @@ export const STEPS: TourStep[] = [
   },
   {
     id: "toaster",
-    target: '[data-agent-id="toaster"]',
+    // custom items may not include the toaster — fall back to the deck
+    target: (c) => (c.run?.agents["toaster"] ? '[data-agent-id="toaster"]' : '[data-tour="deck"]'),
     placement: "left",
     title: (
       <>
@@ -220,8 +222,9 @@ export const STEPS: TourStep[] = [
         prüf es nach: <code className="font-mono text-ink">npm run eval</code> fährt 16
         deterministische assertions gegen genau diese mechanik — runaway gestoppt, budget
         gehalten, isolation bewiesen. exit 0. und wenn du wissen willst, was ein einzelner agent
-        gedacht hat: klick auf seine karte — der trace zeigt jeden schritt. nochmal ansehen? der
-        ✦-knopf oben rechts.
+        gedacht hat: klick auf seine karte — der trace zeigt jeden schritt. eigene ideen? der
+        „items“-knopf in der leiste öffnet den editor — name, pitch, fertig. auf wunsch erfindet
+        haiku welche dazu. nochmal ansehen? der ✦-knopf oben rechts.
       </>
     ),
   },

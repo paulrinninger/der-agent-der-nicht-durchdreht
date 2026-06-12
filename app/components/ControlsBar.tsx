@@ -3,11 +3,7 @@
 import { memo } from "react";
 import type { RunMode } from "@/src/types";
 import { KillSwitch } from "./KillSwitch";
-
-const PRESETS = [
-  { key: "standard", label: "standard", budget: 200_000, concurrency: 3 },
-  { key: "crunch", label: "budget-crunch", budget: 10_000, concurrency: 3 },
-] as const;
+import { PRESETS, type PresetDef } from "./presets";
 
 export const ControlsBar = memo(function ControlsBar({
   mode,
@@ -16,6 +12,10 @@ export const ControlsBar = memo(function ControlsBar({
   onConcurrency,
   budget,
   onBudget,
+  preset,
+  onPreset,
+  itemCount,
+  onOpenItems,
   hasApiKey,
   isRunning,
   canResume,
@@ -30,6 +30,10 @@ export const ControlsBar = memo(function ControlsBar({
   onConcurrency: (n: number) => void;
   budget: number;
   onBudget: (n: number) => void;
+  preset: PresetDef["key"] | null;
+  onPreset: (p: PresetDef) => void;
+  itemCount: number;
+  onOpenItems: () => void;
   hasApiKey: boolean;
   isRunning: boolean;
   canResume: boolean;
@@ -45,25 +49,36 @@ export const ControlsBar = memo(function ControlsBar({
     >
       <div>
         <label className="font-display mb-1.5 block text-[11px] uppercase tracking-[0.15em] text-ink-dim">
-          preset
+          lauf
         </label>
-        <div className="flex gap-1.5">
+        <div className="flex flex-wrap gap-1.5">
           {PRESETS.map((p) => (
             <button
               key={p.key}
               disabled={isRunning}
-              onClick={() => {
-                onBudget(p.budget);
-                onConcurrency(p.concurrency);
-              }}
-              className={`puck transition-colors ${
-                budget === p.budget ? "border-accent/40 text-accent-soft" : "hover:text-ink"
+              onClick={() => onPreset(p)}
+              title={
+                p.key === "chaos" && mode === "anthropic"
+                  ? "szenarien wirken nur im mock-modus — mit haiku laufen die items einfach normal"
+                  : undefined
+              }
+              className={`puck cursor-pointer transition-colors ${
+                preset === p.key ? "border-accent/40 text-ink" : "hover:text-ink"
               }`}
             >
               {p.label}
+              <span className={`puck-tag ${p.tagClass}`}>{p.tag}</span>
             </button>
           ))}
         </div>
+      </div>
+      <div>
+        <label className="font-display mb-1.5 block text-[11px] uppercase tracking-[0.15em] text-ink-dim">
+          items
+        </label>
+        <button onClick={onOpenItems} className="puck h-9 cursor-pointer hover:text-ink">
+          items · {itemCount}
+        </button>
       </div>
       <div>
         <label className="font-display mb-1.5 block text-[11px] uppercase tracking-[0.15em] text-ink-dim">

@@ -49,6 +49,23 @@ und ein **Budget-Crunch-Preset** (10k), das den Budget-Kill-Switch live demonstr
 Alles davon ist Client-seitig aus dem bestehenden Run-State abgeleitet — null Änderung
 am Kern.
 
+## Eigene Items, KI-Generator, Demo-Läufe, Timeline
+
+- **Item-Editor** („items"-Knopf): eigene Startup-Ideen eingeben (Name + Pitch), per
+  💥 ein Item absichtlich durchdrehen lassen (nur Mock), alles in localStorage
+  persistiert. Der Server validiert (zod), slugified umlaut-sicher und hält bei bis zu
+  200 Items.
+- **✨ KI-Generator**: Haiku erfindet auf Knopfdruck neue Quatsch-Startups (optional zu
+  einem Thema) — via Structured Outputs, Kosten werden angezeigt (~$0,002 für 5 Ideen).
+  Ohne API-Key fällt er ehrlich gelabelt auf einen Offline-Kombinator zurück.
+- **Drei Demo-Läufe** wie auf der Aufgaben-Seite: *kontrollierter lauf [ok]* ·
+  *chaos-crew [gestoppt]* (6 absichtlich kaputte Agenten — 4 verschiedene Sicherungen
+  feuern, einer korrigiert sich selbst) · *budget-crunch [budget]* (10k-Budget, der
+  Kill-Switch greift live).
+- **Lauf-Timeline**: Live-Gantt über alle Agenten — Lebensdauer-Balken (farbcodiert nach
+  Ausgang), Notches pro Tool-Call (rot = abgelehnt), Now-Cursor, Zeitachse. Komplett aus
+  den vorhandenen Traces abgeleitet.
+
 ## Eval-Modus — die Pflicht-Kriterien als Beweis, ohne UI und ohne Key
 
 ```bash

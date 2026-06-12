@@ -48,7 +48,10 @@ const Bay = memo(function Bay({
             <span>
               step {agent.steps}/{maxSteps}
             </span>
-            <span>{num(tokens)} tok</span>
+            {/* keyed remount replays the blip on every token change */}
+            <span key={tokens} className="blip-num">
+              {num(tokens)} tok
+            </span>
           </p>
         </div>
       </div>

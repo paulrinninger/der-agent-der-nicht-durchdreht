@@ -689,6 +689,116 @@ body::after {
     font-size: 11px;
     color: var(--color-accent-soft);
   }
+
+  /* ---- preset tags + editor rows ---- */
+  .puck-tag {
+    margin-left: 0.5ch;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0 0.4rem;
+    font-size: 9px;
+    letter-spacing: 0.05em;
+  }
+  .item-row {
+    display: grid;
+    grid-template-columns: 1.5rem 1fr 2.25rem 2.25rem;
+    gap: 0.5rem;
+    align-items: start;
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.03);
+    padding: 0.625rem;
+  }
+
+  /* ---- run timeline (gantt) ---- */
+  .tl-track {
+    height: 8px;
+    border-radius: 9999px;
+    background: rgba(0, 0, 0, 0.3);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+  .tl-row:hover .tl-track {
+    background: rgba(125, 211, 252, 0.06);
+  }
+  .tl-bar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-radius: 9999px;
+    transition:
+      width 300ms var(--ease-out-soft),
+      left 300ms var(--ease-out-soft);
+  }
+  .tl-running {
+    background: linear-gradient(90deg, #5db8e8, #a5e0fc);
+    box-shadow: 0 0 10px rgba(125, 211, 252, 0.4);
+  }
+  .tl-completed {
+    background: var(--color-ok);
+    opacity: 0.75;
+  }
+  .tl-failed {
+    background: var(--color-err);
+    opacity: 0.8;
+  }
+  .tl-aborted {
+    background: var(--color-warn);
+    opacity: 0.75;
+  }
+  .tl-pending {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .tl-tick {
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    width: 2px;
+    border-radius: 1px;
+  }
+  .tl-tick-executed {
+    background: rgba(236, 238, 244, 0.8);
+  }
+  .tl-tick-rejected {
+    background: var(--color-err);
+    box-shadow: 0 0 6px rgba(248, 113, 113, 0.6);
+  }
+  .tl-tick-error {
+    background: var(--color-warn);
+  }
+  .tl-grid {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.05);
+    pointer-events: none;
+  }
+  .tl-now {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--color-accent);
+    box-shadow: 0 0 8px rgba(125, 211, 252, 0.6);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .tl-name {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--color-ink-dim);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-right: 0.75rem;
+  }
+  .tl-axis {
+    position: absolute;
+    transform: translateX(-50%);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: rgba(151, 160, 178, 0.55);
+  }
 }
 
 /* ============================================================
@@ -771,6 +881,32 @@ body::after {
   }
   .tour-step-in {
     animation: rise 300ms var(--ease-out-soft) both;
+  }
+  .gauge-blip {
+    animation: gauge-blip 600ms var(--ease-out-soft) both;
+  }
+  .blip-num {
+    display: inline-block;
+    animation: blip-num 240ms var(--ease-out-soft) both;
+  }
+}
+
+@keyframes gauge-blip {
+  from {
+    opacity: 0.45;
+    transform: scale(0.94);
+    box-shadow: 0 0 24px -6px rgba(125, 211, 252, 0.5);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.05);
+    box-shadow: 0 0 24px -6px rgba(125, 211, 252, 0);
+  }
+}
+@keyframes blip-num {
+  from {
+    transform: scale(1.18);
+    color: var(--color-accent-soft);
   }
 }
 
