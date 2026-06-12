@@ -89,11 +89,12 @@ export class MockLLMClient implements LLMClient {
         }
         return happyStep(turn - 1);
 
-      case "broken-args":
-        // schema-violating args, every single time -> strikes out
-        return respond("Ich recherchiere (irgendwie).", [
-          call("research", { thema: 42, dringend: "ja" }),
-        ]);
+      case "broken-args": {
+        // schema-violating args in three flavours (wrong keys, a raw string
+        // instead of an object, null) -> three strikes, agent is failed
+        const garbage: unknown[] = [{ thema: 42, dringend: "ja" }, "{{{kein json", null];
+        return respond("Ich recherchiere (irgendwie).", [call("research", garbage[turn % 3])]);
+      }
 
       case "no-finalize":
         if (turn === 0) {
