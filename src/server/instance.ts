@@ -1,3 +1,5 @@
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { AnthropicLLMClient } from "../llm/anthropic";
 import { MockLLMClient } from "../llm/mock";
 import { CheckpointStore } from "../orchestrator/checkpoint";
@@ -18,9 +20,19 @@ export interface ServerInstance {
   checkpoints: CheckpointStore;
 }
 
+/** `.runs` im Projekt; auf read-only Dateisystemen (Vercel) tmp-Fallback —
+ *  Resume gilt dort nur für die Lebensdauer der warmen Instanz. */
+function makeCheckpoints(): CheckpointStore {
+  try {
+    return new CheckpointStore(".runs");
+  } catch {
+    return new CheckpointStore(join(tmpdir(), "agency-runs"));
+  }
+}
+
 function build(): ServerInstance {
   const store = new RunStore();
-  const checkpoints = new CheckpointStore(".runs");
+  const checkpoints = makeCheckpoints();
   const orchestrator = new Orchestrator({
     store,
     checkpoints,

@@ -6,6 +6,16 @@ selbst über Reihenfolge und Ende — der Orchestrator sorgt dafür, dass dabei 
 durchdreht: Concurrency-Limit, Tool-Call-Validierung, Step-/Token-Caps pro Agent und
 ein globales Token-Budget mit Kill-Switch, im Flug eingehalten.
 
+## Live-Demo
+
+**https://der-agent-der-nicht-durchdreht.vercel.app** — Passwort: `lfgo-diffusion`
+(dasselbe wie das der Aufgaben-Seite).
+
+Läuft dort im Demo-Modus: $0, deterministisch, ohne API-Key. Zwei Vercel-Eigenheiten:
+„Fortsetzen" aus dem Checkpoint gilt nur, solange die Serverless-Instanz warm ist
+(Checkpoints liegen in `/tmp`), und nach längerer Inaktivität braucht der erste Klick
+einen Cold-Start-Moment. Lokal (s. Schnellstart) gibt es beides nicht.
+
 ## Schnellstart
 
 ```bash
