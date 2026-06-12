@@ -14,11 +14,11 @@ const STATUS_LABEL: Record<ItemStatus, string> = {
 };
 
 const STATUS_CHIP: Record<ItemStatus, string> = {
-  pending: "bg-panel-2 text-ink-dim border-line",
-  running: "bg-accent/10 text-accent border-accent/40",
-  completed: "bg-ok/10 text-ok border-ok/40",
-  failed: "bg-err/10 text-err border-err/40",
-  aborted: "bg-warn/10 text-warn border-warn/40",
+  pending: "chip chip-pending",
+  running: "chip chip-running",
+  completed: "chip chip-completed",
+  failed: "chip chip-failed",
+  aborted: "chip chip-aborted",
 };
 
 const END_REASON_LABEL: Record<EndReason, string> = {
@@ -120,27 +120,27 @@ export default function Dashboard() {
   const selectedAgent = selected && run ? run.agents[selected] : null;
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10">
+    <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       {/* header */}
       <header className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className="display-title text-3xl font-bold sm:text-4xl">
           der agent, der nicht durchdreht<span className="text-accent">.</span>
         </h1>
-        <p className="mt-1 text-sm text-ink-dim">
+        <p className="mt-2 text-sm text-ink-dim">
           15 Quatsch-Startups · je ein Agent mit Tools · Concurrency-Limit, Tool-Call-Validierung,
           Step-/Budget-Caps, globaler Kill-Switch
         </p>
       </header>
 
       {/* controls */}
-      <section className="mb-6 flex flex-wrap items-end gap-4 rounded-xl border border-line bg-panel p-4">
+      <section className="glass glass-blur mb-6 flex flex-wrap items-end gap-4 p-4 sm:p-5">
         <div>
-          <label className="mb-1 block text-xs text-ink-dim">Modus</label>
-          <div className="flex overflow-hidden rounded-lg border border-line">
+          <label className="font-display mb-1.5 block text-xs text-ink-dim">Modus</label>
+          <div className="seg">
             <button
               onClick={() => setMode("mock")}
               disabled={isRunning}
-              className={`px-3 py-1.5 text-sm ${mode === "mock" ? "bg-accent/15 text-accent" : "bg-panel-2 text-ink-dim"}`}
+              className={`seg-item ${mode === "mock" ? "seg-item-active" : ""}`}
             >
               Mock ($0)
             </button>
@@ -148,21 +148,19 @@ export default function Dashboard() {
               onClick={() => setMode("anthropic")}
               disabled={isRunning || !hasApiKey}
               title={hasApiKey ? "claude-haiku-4-5" : "Kein ANTHROPIC_API_KEY in .env — Mock-Modus verfügbar"}
-              className={`px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-40 ${
-                mode === "anthropic" ? "bg-accent/15 text-accent" : "bg-panel-2 text-ink-dim"
-              }`}
+              className={`seg-item ${mode === "anthropic" ? "seg-item-active" : ""}`}
             >
               Claude Haiku
             </button>
           </div>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-ink-dim">Parallel (max)</label>
+          <label className="font-display mb-1.5 block text-xs text-ink-dim">Parallel (max)</label>
           <select
             value={concurrency}
             disabled={isRunning}
             onChange={(e) => setConcurrency(Number(e.target.value))}
-            className="rounded-lg border border-line bg-panel-2 px-3 py-1.5 text-sm"
+            className="field text-sm"
           >
             {[1, 2, 3, 4, 5].map((n) => (
               <option key={n} value={n}>
@@ -172,7 +170,7 @@ export default function Dashboard() {
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-ink-dim">Token-Budget (global)</label>
+          <label className="font-display mb-1.5 block text-xs text-ink-dim">Token-Budget (global)</label>
           <input
             type="number"
             value={budget}
@@ -180,32 +178,24 @@ export default function Dashboard() {
             min={1_000}
             step={1_000}
             onChange={(e) => setBudget(Number(e.target.value))}
-            className="w-32 rounded-lg border border-line bg-panel-2 px-3 py-1.5 font-mono text-sm"
+            className="field w-32 font-mono text-sm"
           />
         </div>
         <div className="ml-auto flex gap-2">
           {canResume && (
-            <button
-              onClick={() => post(`/api/runs/${run.id}/resume`)}
-              disabled={busy}
-              className="rounded-lg border border-warn/50 bg-warn/10 px-4 py-1.5 text-sm font-medium text-warn hover:bg-warn/20"
-            >
+            <button onClick={() => post(`/api/runs/${run.id}/resume`)} disabled={busy} className="btn btn-warn">
               ↻ Fortsetzen
             </button>
           )}
           {isRunning ? (
-            <button
-              onClick={() => post(`/api/runs/${run.id}/kill`)}
-              disabled={busy}
-              className="rounded-lg border border-err/50 bg-err/10 px-5 py-1.5 text-sm font-semibold text-err hover:bg-err/25"
-            >
+            <button onClick={() => post(`/api/runs/${run.id}/kill`)} disabled={busy} className="btn btn-destructive">
               ■ Kill-Switch
             </button>
           ) : (
             <button
               onClick={() => post("/api/runs", { mode, concurrency, globalTokenBudget: budget })}
               disabled={busy}
-              className="rounded-lg border border-ok/50 bg-ok/10 px-5 py-1.5 text-sm font-semibold text-ok hover:bg-ok/25"
+              className="btn btn-positive"
             >
               ▶ Batch starten
             </button>
@@ -213,58 +203,54 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {error && (
-        <p className="mb-4 rounded-lg border border-err/40 bg-err/10 px-4 py-2 text-sm text-err">{error}</p>
-      )}
+      {error && <p className="alert-err mb-4 px-4 py-3 text-sm">{error}</p>}
 
       {run ? (
         <>
           {/* stats */}
           <section className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            <Stat label="Status">
+            <Stat label="Status" index={0}>
               <span className={isRunning ? "text-accent" : run.status === "completed" ? "text-ok" : "text-warn"}>
                 {run.status === "running" ? "AKTIV" : run.status === "completed" ? "FERTIG" : "GESTOPPT"}
                 {run.stopReason ? ` (${run.stopReason === "budget" ? "Budget" : run.stopReason === "kill" ? "Kill" : "Fatal"})` : ""}
               </span>
             </Stat>
-            <Stat label={`Aktiv / Limit ${run.config.concurrency}`}>
+            <Stat label={`Aktiv / Limit ${run.config.concurrency}`} index={1}>
               {count("running")}
               <span className="text-ink-dim"> · Peak {run.concurrencyPeak}</span>
             </Stat>
-            <Stat label="Fertig">
+            <Stat label="Fertig" index={2}>
               <span className="text-ok">{count("completed")}</span>
               <span className="text-ink-dim"> / {agents.length}</span>
             </Stat>
-            <Stat label="Fehler / Gestoppt">
+            <Stat label="Fehler / Gestoppt" index={3}>
               <span className="text-err">{count("failed")}</span>
               <span className="text-ink-dim"> / </span>
               <span className="text-warn">{count("aborted")}</span>
             </Stat>
-            <Stat label="Tokens">
+            <Stat label="Tokens" index={4}>
               {num(run.budget.used)}
               <span className="text-ink-dim"> / {num(run.budget.limit)}</span>
             </Stat>
-            <Stat label={`Kosten (${run.config.mode === "mock" ? "simuliert" : "Haiku"})`}>
+            <Stat label={`Kosten (${run.config.mode === "mock" ? "simuliert" : "Haiku"})`} index={5}>
               ${run.costUsd.toFixed(4)}
             </Stat>
           </section>
 
           {/* budget bar */}
           <section className="mb-6">
-            <div className="h-2.5 overflow-hidden rounded-full border border-line bg-panel">
-              <div className="flex h-full">
-                <div
-                  className="h-full bg-accent transition-all duration-300"
-                  style={{ width: `${Math.min(100, (run.budget.used / run.budget.limit) * 100)}%` }}
-                />
-                <div
-                  className="h-full bg-accent/30 transition-all duration-300"
-                  style={{ width: `${Math.min(100, (run.budget.reserved / run.budget.limit) * 100)}%` }}
-                  title="reserviert für laufende Calls"
-                />
-              </div>
+            <div className="bar-track">
+              <div
+                className="bar-used"
+                style={{ width: `${Math.min(100, (run.budget.used / run.budget.limit) * 100)}%` }}
+              />
+              <div
+                className="bar-reserved"
+                style={{ width: `${Math.min(100, (run.budget.reserved / run.budget.limit) * 100)}%` }}
+                title="reserviert für laufende Calls"
+              />
             </div>
-            <p className="mt-1 font-mono text-xs text-ink-dim">
+            <p className="mt-1.5 font-mono text-xs text-ink-dim">
               verbraucht {num(run.budget.used)} · reserviert {num(run.budget.reserved)} · Peak{" "}
               {num(run.budget.peak)} / {num(run.budget.limit)}
             </p>
@@ -272,13 +258,19 @@ export default function Dashboard() {
 
           {/* agent cards */}
           <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {agents.map((a) => (
-              <AgentCard key={a.itemId} agent={a} maxSteps={run.config.maxStepsPerAgent} onClick={() => setSelected(a.itemId)} />
+            {agents.map((a, i) => (
+              <AgentCard
+                key={a.itemId}
+                agent={a}
+                index={i}
+                maxSteps={run.config.maxStepsPerAgent}
+                onClick={() => setSelected(a.itemId)}
+              />
             ))}
           </section>
         </>
       ) : (
-        <section className="rounded-xl border border-dashed border-line bg-panel p-12 text-center text-ink-dim">
+        <section className="glass border-dashed p-12 text-center text-ink-dim">
           <p className="text-lg">Noch kein Lauf.</p>
           <p className="mt-1 text-sm">
             „Batch starten“ schickt 15 Quatsch-Startups durch je einen Agenten — max.{" "}
@@ -288,13 +280,12 @@ export default function Dashboard() {
       )}
 
       {/* trace drawer */}
-      {selectedAgent && (
-        <TraceDrawer agent={selectedAgent} onClose={() => setSelected(null)} />
-      )}
+      {selectedAgent && <TraceDrawer agent={selectedAgent} onClose={() => setSelected(null)} />}
 
-      <footer className="mt-10 text-xs text-ink-dim">
-        Eval ohne UI &amp; ohne Key: <code className="font-mono">npm run eval</code> — beweist Step-Cap,
-        Budget-Invariante, Isolation, Concurrency-Limit, Resume.
+      <footer className="mt-12 pb-4 text-center text-xs text-ink-dim">
+        Eval ohne UI &amp; ohne Key:{" "}
+        <code className="rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono">npm run eval</code>{" "}
+        — beweist Step-Cap, Budget-Invariante, Isolation, Concurrency-Limit, Resume.
       </footer>
     </main>
   );
@@ -302,24 +293,35 @@ export default function Dashboard() {
 
 // ---------- components ----------
 
-function Stat({ label, children }: { label: string; children: React.ReactNode }) {
+function Stat({ label, index, children }: { label: string; index: number; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-line bg-panel px-4 py-3">
-      <p className="text-[11px] uppercase tracking-wider text-ink-dim">{label}</p>
-      <p className="mt-0.5 font-mono text-lg font-semibold">{children}</p>
+    <div className="glass enter px-4 py-3" style={{ "--i": index } as React.CSSProperties}>
+      <p className="font-display text-[11px] uppercase tracking-wider text-ink-dim">{label}</p>
+      <p className="mt-0.5 font-mono text-lg font-semibold tabular-nums">{children}</p>
     </div>
   );
 }
 
-function AgentCard({ agent, maxSteps, onClick }: { agent: AgentState; maxSteps: number; onClick: () => void }) {
+function AgentCard({
+  agent,
+  index,
+  maxSteps,
+  onClick,
+}: {
+  agent: AgentState;
+  index: number;
+  maxSteps: number;
+  onClick: () => void;
+}) {
   return (
     <button
       onClick={onClick}
-      className="rounded-xl border border-line bg-panel p-4 text-left transition-colors hover:border-accent/50"
+      className={`glass lift enter p-4 text-left ${agent.status === "running" ? "is-running" : ""}`}
+      style={{ "--i": index } as React.CSSProperties}
     >
       <div className="flex items-start justify-between gap-2">
         <h3 className="text-sm font-semibold leading-tight">{agent.itemName}</h3>
-        <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] ${STATUS_CHIP[agent.status]}`}>
+        <span className={`${STATUS_CHIP[agent.status]} shrink-0`}>
           {STATUS_LABEL[agent.status]}
           {agent.endReason && agent.endReason !== "finalized" ? ` · ${END_REASON_LABEL[agent.endReason]}` : ""}
         </span>
@@ -331,46 +333,45 @@ function AgentCard({ agent, maxSteps, onClick }: { agent: AgentState; maxSteps: 
         {num(agent.usage.inputTokens + agent.usage.outputTokens)} Tok · ${agent.costUsd.toFixed(4)}
       </p>
       {agent.status === "running" && agent.lastAction && (
-        <p className="mt-1 truncate font-mono text-xs text-accent">{agent.lastAction}</p>
+        <p className="shimmer mt-1.5 truncate font-mono text-xs">{agent.lastAction}</p>
       )}
-      {agent.result && <p className="mt-1 line-clamp-2 text-xs text-ink-dim">{agent.result}</p>}
-      {agent.error && <p className="mt-1 line-clamp-2 text-xs text-err">{agent.error}</p>}
+      {agent.result && <p className="mt-1.5 line-clamp-2 text-xs text-ink-dim">{agent.result}</p>}
+      {agent.error && <p className="mt-1.5 line-clamp-2 text-xs text-err">{agent.error}</p>}
     </button>
   );
 }
 
 function TraceDrawer({ agent, onClose }: { agent: AgentState; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/50" onClick={onClose}>
-      <aside
-        className="h-full w-full max-w-lg overflow-y-auto border-l border-line bg-panel p-5"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 z-50">
+      {/* backdrop and sheet as SIBLINGS — Safari breaks nested backdrop-filter */}
+      <div className="drawer-backdrop absolute inset-0" onClick={onClose} />
+      <aside className="glass-sheet drawer-sheet absolute bottom-2 right-2 top-2 w-[min(32rem,calc(100vw-1rem))] overflow-y-auto p-5 sm:bottom-3 sm:right-3 sm:top-3">
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold">{agent.itemName}</h2>
-            <p className="font-mono text-xs text-ink-dim">
+            <h2 className="font-display text-lg font-semibold">{agent.itemName}</h2>
+            <p className="mt-0.5 font-mono text-xs text-ink-dim">
               {STATUS_LABEL[agent.status]}
               {agent.endReason ? ` · ${END_REASON_LABEL[agent.endReason]}` : ""} · {agent.steps} Steps ·{" "}
               {num(agent.usage.inputTokens)} in / {num(agent.usage.outputTokens)} out · $
               {agent.costUsd.toFixed(4)}
             </p>
           </div>
-          <button onClick={onClose} className="rounded-lg border border-line px-2.5 py-1 text-sm text-ink-dim hover:text-ink">
+          <button onClick={onClose} aria-label="Schließen" className="btn h-11 w-11 rounded-full p-0 text-ink-dim">
             ✕
           </button>
         </div>
 
         {agent.result && (
-          <p className="mb-4 rounded-lg border border-ok/30 bg-ok/5 p-3 text-sm">{agent.result}</p>
+          <p className="mb-4 rounded-2xl border border-ok/20 bg-ok/[0.07] p-3 text-sm">{agent.result}</p>
         )}
 
-        <h3 className="mb-2 text-[11px] uppercase tracking-wider text-ink-dim">
+        <h3 className="font-display mb-2 text-[11px] uppercase tracking-wider text-ink-dim">
           Agent-Trace ({agent.trace.length} Einträge)
         </h3>
         <ol className="space-y-2">
           {agent.trace.map((t, i) => (
-            <li key={i} className="rounded-lg border border-line bg-panel-2 p-2.5">
+            <li key={i} className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
               <p className="font-mono text-[11px] text-ink-dim">
                 {TRACE_ICON[t.kind]} Step {t.step} · {t.kind}
                 {t.usage ? ` · ${num(t.usage.inputTokens)} in / ${num(t.usage.outputTokens)} out` : ""}
