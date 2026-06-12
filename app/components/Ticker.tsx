@@ -4,6 +4,7 @@ import { memo, useRef, useState } from "react";
 import { formatT } from "./derive";
 import type { TickerEntry } from "./hooks";
 import { KIND_GLYPH } from "./labels";
+import { PanelHeader } from "./PanelHeader";
 
 const GLYPH_COLOR: Record<string, string> = {
   llm_call: "text-ink-dim",
@@ -38,7 +39,7 @@ export const Ticker = memo(function Ticker({
 
   return (
     <section
-      className="glass flex max-h-[min(30rem,calc(100dvh-2rem))] flex-col overflow-hidden"
+      className="glass flex max-h-[24rem] flex-col overflow-hidden lg:max-h-[calc(100dvh-2rem)]"
       data-tour="ticker"
       onPointerEnter={() => {
         frozen.current = entries;
@@ -49,25 +50,28 @@ export const Ticker = memo(function Ticker({
         frozen.current = [];
       }}
     >
-      <div className="flex items-baseline justify-between px-4 pb-2 pt-4">
-        <h2 className="font-display text-[11px] uppercase tracking-[0.2em] text-ink-dim">
-          telemetrie
-        </h2>
-        {paused ? (
-          <span className="chip chip-aborted">pausiert{newCount > 0 ? ` · +${newCount} neu` : ""}</span>
-        ) : (
-          live && (
-            <span className="flex items-center gap-1.5 font-mono text-[10px] text-accent-soft">
-              <span className="pipe-dot pipe-dot-active h-1.5 w-1.5" />
-              live
-            </span>
-          )
-        )}
+      <div className="px-5 pt-4">
+        <PanelHeader
+          title="telemetrie"
+          sub="alle tool-calls aller agenten, live — neueste oben. hover pausiert den feed."
+          meta={
+            paused ? (
+              <span className="chip chip-aborted">
+                pausiert{newCount > 0 ? ` · +${newCount} neu` : ""}
+              </span>
+            ) : live ? (
+              <span className="flex items-center gap-1.5 font-mono text-[10px] text-accent-soft">
+                <span className="pipe-dot pipe-dot-active h-1.5 w-1.5" />
+                live
+              </span>
+            ) : undefined
+          }
+        />
       </div>
-      <ol className="min-h-[8rem] overflow-y-auto pb-2">
+      <ol className="min-h-[8rem] flex-1 overflow-y-auto pb-2">
         {shown.length === 0 ? (
-          <li className="px-4 py-6 font-mono text-[11px] text-ink-dim/50">
-            noch keine tool-calls — starte einen batch.
+          <li className="px-5 py-6 font-mono text-[11px] text-ink-dim/50">
+            noch keine tool-calls — starte einen lauf.
           </li>
         ) : (
           shown.map((e) => (

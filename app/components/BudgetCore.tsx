@@ -6,6 +6,7 @@ import { Gauge } from "./Gauge";
 import type { BurnPoint } from "./hooks";
 import { num } from "./labels";
 import { Odometer } from "./Odometer";
+import { PanelHeader } from "./PanelHeader";
 import { Sparkline } from "./Sparkline";
 
 export const BudgetCore = memo(function BudgetCore({
@@ -25,14 +26,15 @@ export const BudgetCore = memo(function BudgetCore({
 
   return (
     <section className="glass flex min-h-[21rem] flex-col p-5">
-      <div className="flex items-baseline justify-between">
-        <h2 className="font-display text-[11px] uppercase tracking-[0.2em] text-ink-dim">
-          budget-kern
-        </h2>
-        <span className="font-mono text-[11px] text-ink-dim">
-          {mode === "mock" ? "simuliert" : "claude-haiku-4-5"}
-        </span>
-      </div>
+      <PanelHeader
+        title="budget-kern"
+        sub="ein token-vorrat für alle agenten — jeder ki-call reserviert erst, dann wird abgerechnet."
+        meta={
+          <span data-tip={mode === "mock" ? "zahlen aus dem simulator — gleiche mechanik, null kosten." : undefined}>
+            {mode === "mock" ? "demo-daten" : "claude-haiku-4-5"}
+          </span>
+        }
+      />
 
       <div className="relative mx-auto mt-1 w-full max-w-[230px]" data-tour="gauge">
         {/* keyed remount replays a 600ms pulse whenever ~500 tokens commit —
@@ -64,10 +66,16 @@ export const BudgetCore = memo(function BudgetCore({
 
       <div className="mt-auto">
         <Sparkline series={series} live={live} />
-        <p className="mt-1.5 font-mono text-[10px] leading-relaxed text-ink-dim">
-          <span className="text-accent-soft">━</span> verbraucht ·{" "}
-          <span className="text-accent-soft">▨</span> reserviert (in-flight) ·{" "}
-          <span className="text-warn-soft">|</span> peak {num(budget.peak)}
+        <p className="legend mt-1.5">
+          <span data-tip="tokens, die nach abgeschlossenen calls fest verbucht sind.">
+            <span className="text-accent-soft">━</span> verbraucht
+          </span>
+          <span data-tip="vor jedem ki-call zur seite gelegt — so können parallele agenten das budget nie gemeinsam reißen.">
+            <span className="text-accent-soft">▨</span> reserviert (laufende calls)
+          </span>
+          <span data-tip="höchster stand von verbraucht + reserviert. bleibt er unterm limit, hat die invariante gehalten.">
+            <span className="text-warn-soft">|</span> peak {num(budget.peak)}
+          </span>
         </p>
       </div>
     </section>

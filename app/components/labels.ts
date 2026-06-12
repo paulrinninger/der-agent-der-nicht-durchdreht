@@ -4,7 +4,7 @@ export const STATUS_LABEL: Record<ItemStatus, string> = {
   pending: "wartet",
   running: "läuft",
   completed: "fertig",
-  failed: "Fehler",
+  failed: "fehler",
   aborted: "gestoppt",
 };
 
@@ -17,14 +17,14 @@ export const STATUS_CHIP: Record<ItemStatus, string> = {
 };
 
 export const END_REASON_LABEL: Record<EndReason, string> = {
-  finalized: "finalize",
-  step_cap: "Step-Cap",
-  token_cap: "Token-Cap",
-  strikes: "3 Strikes",
-  no_finalize: "kein finalize",
-  error: "LLM-Fehler",
-  killed: "Kill-Switch",
-  global_budget: "Budget",
+  finalized: "urteil abgegeben",
+  step_cap: "step-limit erreicht",
+  token_cap: "token-limit erreicht",
+  strikes: "3 strikes — ungültige tool-calls",
+  no_finalize: "kein urteil abgegeben",
+  error: "llm-fehler",
+  killed: "kill-switch",
+  global_budget: "globales budget erschöpft",
 };
 
 /** mono telemetry glyphs — deliberately no emoji */

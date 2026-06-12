@@ -10,14 +10,39 @@ export interface PresetDef {
   label: string;
   tag: string;
   tagClass: string;
+  hint: string;
   budget: number;
   concurrency: number;
 }
 
 export const PRESETS: PresetDef[] = [
-  { key: "kontrolliert", label: "kontrollierter lauf", tag: "ok", tagClass: "text-ok-soft", budget: 200_000, concurrency: 3 },
-  { key: "chaos", label: "chaos-crew", tag: "gestoppt", tagClass: "text-err-soft", budget: 200_000, concurrency: 3 },
-  { key: "crunch", label: "budget-crunch", tag: "budget", tagClass: "text-warn-soft", budget: 10_000, concurrency: 3 },
+  {
+    key: "kontrolliert",
+    label: "kontrollierter lauf",
+    tag: "ok",
+    tagClass: "text-ok-soft",
+    hint: "15 normale items, 200.000 tokens — läuft sauber durch. der happy path.",
+    budget: 200_000,
+    concurrency: 3,
+  },
+  {
+    key: "chaos",
+    label: "chaos-crew",
+    tag: "gestoppt",
+    tagClass: "text-err-soft",
+    hint: "6 von 15 agenten drehen absichtlich durch — zeigt live, wie die sicherungen greifen (nur demo-modus).",
+    budget: 200_000,
+    concurrency: 3,
+  },
+  {
+    key: "crunch",
+    label: "budget-crunch",
+    tag: "budget",
+    tagClass: "text-warn-soft",
+    hint: "nur 10.000 tokens für 15 items — das budget reißt mittendrin und der lauf stoppt sauber.",
+    budget: 10_000,
+    concurrency: 3,
+  },
 ];
 
 export interface PresetItem {

@@ -3,9 +3,10 @@
 import { memo } from "react";
 import type { AgentState, RunState } from "@/src/types";
 import { num } from "./labels";
+import { PanelHeader } from "./PanelHeader";
 
 /**
- * The hero: the concurrency limit made physical. N bays, agents dock in and
+ * The hero: the concurrency limit made physical. N slots, agents dock in and
  * out as the worker pool schedules them; the queue and done-stack show the
  * rest of the pipeline state.
  */
@@ -22,7 +23,7 @@ const Bay = memo(function Bay({
   if (!agent) {
     return (
       <div className="bay flex items-center justify-center">
-        <span className="bay-free-label">bay 0{index + 1} · frei</span>
+        <span className="bay-free-label">slot 0{index + 1} · frei</span>
       </div>
     );
   }
@@ -32,7 +33,7 @@ const Bay = memo(function Bay({
       {/* keyed by itemId so the dock animation plays once per docking agent */}
       <div key={agent.itemId} className="bay-dock flex h-full flex-col">
         <p className="font-mono text-[10px] tracking-[0.2em] text-accent-soft/70">
-          bay 0{index + 1}
+          slot 0{index + 1}
         </p>
         <h4 className="mt-1 line-clamp-2 text-[13px] font-semibold leading-snug">
           {agent.itemName}
@@ -44,7 +45,7 @@ const Bay = memo(function Bay({
           <div className="bay-stepbar">
             <div style={{ width: `${Math.min(100, (agent.steps / maxSteps) * 100)}%` }} />
           </div>
-          <p className="mt-1.5 flex justify-between font-mono text-[10px] text-ink-dim">
+          <p className="mt-1.5 flex justify-between font-mono text-[11px] text-ink-dim">
             <span>
               step {agent.steps}/{maxSteps}
             </span>
@@ -101,23 +102,44 @@ export const SchedulerDeck = memo(function SchedulerDeck({
 
   return (
     <section className="glass flex min-h-[21rem] flex-col p-5" data-tour="deck">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-display text-[11px] uppercase tracking-[0.2em] text-ink-dim">
-          scheduler · {run.config.concurrency} slots
-          {run.concurrencyPeak > 0 && ` · peak ${run.concurrencyPeak}`}
-        </h2>
-        <p className="font-mono text-[11px] text-ink-dim">
-          <span className="text-ok-soft">✓ {done}</span>
-          {" · "}
-          <span className={failed > 0 ? "text-err-soft" : ""}>✕ {failed}</span>
-          {" · "}
-          <span className={aborted > 0 ? "text-warn-soft" : ""}>◼ {aborted}</span>
-          <span className="text-ink-dim/60"> / {agents.length}</span>
-        </p>
-      </div>
+      <PanelHeader
+        title="scheduler"
+        sub={`max. ${run.config.concurrency} agenten gleichzeitig — wer keinen slot hat, wartet unten in der schlange.`}
+        meta={
+          <>
+            <span className="text-ok-soft" data-tip="fertig — agent hat ein urteil abgegeben">
+              ✓ {done}
+            </span>
+            <span className="text-ink-dim/70"> fertig · </span>
+            <span
+              className={failed > 0 ? "text-err-soft" : ""}
+              data-tip="fehler — eine sicherung hat den agenten gestoppt"
+            >
+              ✕ {failed}
+            </span>
+            <span className="text-ink-dim/70"> fehler · </span>
+            <span
+              className={aborted > 0 ? "text-warn-soft" : ""}
+              data-tip="gestoppt — von außen beendet (kill-switch oder budget)"
+            >
+              ◼ {aborted}
+            </span>
+            <span className="text-ink-dim/70"> gestoppt</span>
+            <span className="text-ink-dim/50"> · {agents.length} gesamt</span>
+            {run.concurrencyPeak > 0 && (
+              <span
+                className="ml-2"
+                data-tip="höchste zahl gleichzeitig aktiver agenten in diesem lauf — überschreitet nie das limit"
+              >
+                · peak {run.concurrencyPeak}/{run.config.concurrency}
+              </span>
+            )}
+          </>
+        }
+      />
 
       <div
-        className="mt-3 grid gap-3"
+        className="grid gap-3"
         style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))" }}
       >
         {slots.map((itemId, i) => (

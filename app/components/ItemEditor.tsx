@@ -23,6 +23,16 @@ interface GenResult {
   costUsd?: number;
 }
 
+const supportsFieldSizing =
+  typeof CSS !== "undefined" && CSS.supports("field-sizing", "content");
+
+/** auto-grow fallback for browsers without CSS field-sizing (Safari) */
+function autoGrow(el: HTMLTextAreaElement): void {
+  if (supportsFieldSizing) return;
+  el.style.height = "auto";
+  el.style.height = `${Math.min(el.scrollHeight + 2, 144)}px`;
+}
+
 export function ItemEditor({
   open,
   items,
@@ -62,7 +72,6 @@ export function ItemEditor({
   const rows = items ?? defaults;
   const isCustom = items !== null;
 
-  // first edit of the default list materializes it as custom
   const mutate = (next: EditorItem[]): void => onChange(next.length === 0 ? null : next);
   const update = (i: number, patch: Partial<EditorItem>): void =>
     mutate(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
@@ -113,17 +122,26 @@ export function ItemEditor({
         role="dialog"
         aria-modal="true"
         aria-label="item-editor"
-        className="glass-sheet drawer-sheet absolute bottom-2 right-2 top-2 flex w-[min(36rem,calc(100vw-1rem))] flex-col p-5 sm:bottom-3 sm:right-3 sm:top-3"
+        className="glass-sheet drawer-sheet absolute bottom-2 right-2 top-2 flex w-[min(42rem,calc(100vw-1rem))] flex-col p-5 sm:bottom-3 sm:right-3 sm:top-3"
       >
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="font-display text-lg font-semibold lowercase">items · {n}</h2>
-          <div className="flex items-center gap-2">
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div>
+            <h2 className="font-display text-lg font-semibold lowercase">items · {n}</h2>
+            <p className="panel-sub">
+              jede idee bekommt einen eigenen agenten. änderungen gelten ab dem nächsten lauf.
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
             {isCustom && (
               <button onClick={() => onChange(null)} className="puck cursor-pointer hover:text-ink">
                 ↺ zurücksetzen
               </button>
             )}
-            <button onClick={onClose} aria-label="Schließen" className="btn h-11 w-11 rounded-full p-0 text-ink-dim">
+            <button
+              onClick={onClose}
+              aria-label="Schließen"
+              className="btn h-11 w-11 rounded-full p-0 text-ink-dim"
+            >
               ✕
             </button>
           </div>
@@ -131,40 +149,48 @@ export function ItemEditor({
 
         {/* generator strip */}
         <div className="mb-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+          <p className="ctrl-field-label mb-2">✨ neue ideen erfinden lassen</p>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="seg">
-              {[3, 5, 10].map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setGenCount(c)}
-                  className={`seg-item ${genCount === c ? "seg-item-active" : ""}`}
-                >
-                  {c}
-                </button>
-              ))}
+            <div className="flex items-center gap-2">
+              <span className="ctrl-field-label">wie viele?</span>
+              <div className="seg">
+                {[3, 5, 10].map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setGenCount(c)}
+                    className={`seg-item ${genCount === c ? "seg-item-active" : ""}`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
             </div>
             <input
               value={theme}
               onChange={(e) => setTheme(e.target.value)}
               maxLength={80}
-              placeholder="thema (optional), z. b. „fake-cocktails“"
+              placeholder="thema (optional) — z. b. fake-cocktails"
               aria-label="thema"
               className="field min-w-0 flex-1 text-sm"
             />
             <button onClick={generate} disabled={generating} className="btn btn-positive">
-              ✨ per ki erfinden
+              ✨ erfinden
             </button>
           </div>
           <p aria-live="polite" className="mt-2 font-mono text-[11px] text-ink-dim">
-            {generating
-              ? "haiku denkt sich quatsch aus…"
-              : genError
-                ? <span className="text-err-soft">{genError}</span>
-                : genResult
-                  ? genResult.source === "haiku"
-                    ? `${genResult.n} ideen · ${num(genResult.tokens ?? 0)} tokens · $${(genResult.costUsd ?? 0).toFixed(4)}`
-                    : `${genResult.n} ideen · offline erfunden — ohne ki`
-                  : "erfindet neue quatsch-startups und hängt sie oben an die liste."}
+            {generating ? (
+              "haiku denkt sich quatsch-startups aus…"
+            ) : genError ? (
+              <span className="text-err-soft">{genError}</span>
+            ) : genResult ? (
+              genResult.source === "haiku" ? (
+                `${genResult.n} ideen · ${num(genResult.tokens ?? 0)} tokens · $${(genResult.costUsd ?? 0).toFixed(4)}`
+              ) : (
+                `${genResult.n} ideen · offline erfunden — ohne ki`
+              )
+            ) : (
+              "haiku denkt sich quatsch-startups aus und hängt sie oben an die liste."
+            )}
           </p>
         </div>
 
@@ -178,56 +204,79 @@ export function ItemEditor({
               <div key={i} className="item-row opacity-50">
                 <span className="shimmer font-mono text-xs">··</span>
                 <div className="shimmer font-mono text-xs">wird erfunden…</div>
+                <div />
               </div>
             ))}
           {rows.map((it, i) => {
             const invalid = !it.name.trim() || !it.pitch.trim();
             return (
               <div key={i} className="item-row">
-                <span className="pt-2 font-mono text-[11px] text-ink-dim">
+                <span className="pt-6 font-mono text-[11px] text-ink-dim">
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <div className="min-w-0">
-                  <input
-                    value={it.name}
-                    onChange={(e) => update(i, { name: e.target.value })}
-                    maxLength={60}
-                    placeholder="name"
-                    aria-label={`name von item ${i + 1}`}
-                    className="field h-9 w-full text-sm"
-                  />
-                  <input
-                    value={it.pitch}
-                    onChange={(e) => update(i, { pitch: e.target.value })}
-                    maxLength={200}
-                    placeholder="pitch (ein satz)"
-                    aria-label={`pitch von item ${i + 1}`}
-                    className="field mt-1.5 h-9 w-full text-xs"
-                  />
-                  {invalid && <p className="mt-1 text-[10px] text-err-soft">name und pitch dürfen nicht leer sein</p>}
+                <div className="min-w-0 space-y-2">
+                  <div>
+                    <label htmlFor={`it-${i}-name`} className="field-label">
+                      name
+                    </label>
+                    <input
+                      id={`it-${i}-name`}
+                      value={it.name}
+                      onChange={(e) => update(i, { name: e.target.value })}
+                      maxLength={60}
+                      placeholder="z. b. uber für socken"
+                      className="field h-10 w-full text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor={`it-${i}-pitch`} className="field-label">
+                      pitch — ein satz, der die idee verkauft
+                    </label>
+                    <textarea
+                      id={`it-${i}-pitch`}
+                      rows={2}
+                      maxLength={200}
+                      placeholder="was macht das startup, und warum klingt es fast plausibel?"
+                      className="field field-area w-full text-sm"
+                      value={it.pitch}
+                      onChange={(e) => update(i, { pitch: e.target.value })}
+                      onInput={(e) => autoGrow(e.currentTarget)}
+                      ref={(el) => {
+                        if (el) autoGrow(el);
+                      }}
+                    />
+                  </div>
+                  {invalid && (
+                    <p className="text-[11px] text-err-soft">name und pitch dürfen nicht leer sein</p>
+                  )}
                 </div>
-                <button
-                  onClick={() => update(i, { chaos: !it.chaos })}
-                  disabled={mode === "anthropic"}
-                  aria-pressed={it.chaos}
-                  title={
-                    mode === "anthropic"
-                      ? "szenarien wirken nur im mock-modus"
-                      : "💥 absichtlich durchdrehen lassen (nur mock)"
-                  }
-                  className={`puck h-9 cursor-pointer justify-center px-2 ${
-                    it.chaos ? "border-err/40 text-err-soft" : "opacity-60"
-                  } disabled:cursor-not-allowed disabled:opacity-30`}
-                >
-                  💥
-                </button>
-                <button
-                  onClick={() => remove(i)}
-                  aria-label={`item löschen: ${it.name || `nr. ${i + 1}`}`}
-                  className="puck h-9 cursor-pointer justify-center px-2 hover:text-err-soft"
-                >
-                  ✕
-                </button>
+                <div className="flex flex-col items-stretch gap-1.5">
+                  <button
+                    onClick={() => update(i, { chaos: !it.chaos })}
+                    disabled={mode === "anthropic"}
+                    aria-pressed={it.chaos}
+                    data-tip={
+                      mode === "anthropic"
+                        ? "szenarien wirken nur im demo-modus"
+                        : "lässt diesen agenten im demo-modus absichtlich durchdrehen — vorführung fürs step-limit."
+                    }
+                    data-tip-pos="bottom"
+                    className={`puck h-9 cursor-pointer justify-center px-2.5 ${
+                      it.chaos ? "border-err/40 text-err-soft" : "opacity-60 hover:opacity-100"
+                    } disabled:cursor-not-allowed disabled:opacity-30`}
+                  >
+                    💥 chaos
+                  </button>
+                  <button
+                    onClick={() => remove(i)}
+                    aria-label={`idee löschen: ${it.name || `nr. ${i + 1}`}`}
+                    data-tip="idee löschen"
+                    data-tip-pos="bottom"
+                    className="puck h-9 cursor-pointer justify-center px-2.5 hover:border-err/40 hover:text-err-soft"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
             );
           })}
@@ -236,12 +285,17 @@ export function ItemEditor({
         {/* footer */}
         <div className="mt-3 border-t border-white/5 pt-3">
           {chaosPresetActive && (
-            <p className="mb-2 font-mono text-[10px] text-warn-soft">
-              ⚠ preset „chaos-crew“ aktiv — der nächste lauf nutzt die chaos-items, nicht diese liste.
+            <p className="mb-2 font-mono text-[11px] text-warn-soft">
+              ⚠ preset „chaos-crew“ aktiv — der nächste lauf nutzt die chaos-items, nicht diese
+              liste.
             </p>
           )}
-          <p className="font-mono text-[10px] text-ink-dim">
-            {n} items ≈ {n * 4} calls ≈ {num(n * 4 * 310)} tokens · mock $0 · haiku grob ~
+          <p className="font-mono text-[11px] text-ink-dim">
+            {n} ideen ·{" "}
+            <span data-tip="ein call = eine anfrage ans sprachmodell. pro idee typisch: research, draft, critique, finalize.">
+              ~{n * 4} ki-calls (4 pro agent)
+            </span>{" "}
+            · ≈ {num(n * 4 * 310)} tokens · demo 0 $ · echte ki (haiku) ≈{" "}
             {(n * 0.015).toFixed(2).replace(".", ",")} $
           </p>
           <button onClick={onClose} className="btn mt-2 w-full">

@@ -7,6 +7,7 @@ import { AgentRoster } from "./components/AgentRoster";
 import { BudgetCore } from "./components/BudgetCore";
 import { ControlsBar } from "./components/ControlsBar";
 import { FinaleBand } from "./components/FinaleBand";
+import { FlowStrip } from "./components/FlowStrip";
 import { useBurnSeries, useSlotAssignments, useTicker } from "./components/hooks";
 import { ItemEditor, type EditorItem } from "./components/ItemEditor";
 import { MissionHeader } from "./components/MissionHeader";
@@ -209,7 +210,7 @@ export default function MissionControl() {
   const view = run ?? preview;
 
   const slots = useSlotAssignments(view);
-  const ticker = useTicker(view);
+  const ticker = useTicker(view, 80);
   const burn = useBurnSeries(view);
 
   const agents = view ? view.config.items.map((i) => view.agents[i.id]).filter(Boolean) : [];
@@ -246,6 +247,11 @@ export default function MissionControl() {
         onStart={startRun}
         onResume={() => run && post(`/api/runs/${run.id}/resume`)}
         onKill={() => run && post(`/api/runs/${run.id}/kill`)}
+      />
+
+      <FlowStrip
+        itemCount={preset === "chaos" ? CHAOS_ITEMS.length : (customItems ?? DEFAULT_EDITOR_ITEMS).length}
+        concurrency={concurrency}
       />
 
       {error && <p className="alert-err mb-4 px-4 py-3 text-sm">{error}</p>}
@@ -292,10 +298,10 @@ export default function MissionControl() {
           <p className="text-lg">
             noch <em className="accent-serif">kein</em> lauf.
           </p>
-          <p className="mt-2 text-sm">
-            „batch starten“ schickt 15 quatsch-startups durch je einen agenten — max. {concurrency}{" "}
-            parallel, hartes budget, kill-switch jederzeit. der scheduler oben zeigt live, wer
-            gerade in welchem slot arbeitet.
+          <p className="mx-auto mt-2 max-w-[36rem] text-sm">
+            „lauf starten“ schickt {(customItems ?? DEFAULT_EDITOR_ITEMS).length} quatsch-startups
+            durch je einen agenten — max. {concurrency} parallel, hartes token-budget, kill-switch
+            jederzeit. oben siehst du dann live, wer gerade in welchem slot arbeitet.
           </p>
         </section>
       )}

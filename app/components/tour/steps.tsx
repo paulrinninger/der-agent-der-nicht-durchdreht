@@ -43,7 +43,7 @@ export const STEPS: TourStep[] = [
       <>
         15 startup-ideen von fragwürdiger genialität, 15 ki-agenten, die sie bewerten — und ein
         scheduler, der dafür sorgt, dass keiner durchdreht. die tour dauert zwei minuten und
-        startet gleich einen echten lauf. kostet nichts, läuft im mock-modus.
+        startet gleich einen echten lauf. kostet nichts, läuft im demo-modus.
       </>
     ),
   },
@@ -58,7 +58,7 @@ export const STEPS: TourStep[] = [
     ),
     body: (
       <>
-        drei bays, mehr nicht. egal ob 15 items oder 200 — hier arbeiten nie mehr agenten
+        drei slots, mehr nicht. egal ob 15 items oder 200 — hier arbeiten nie mehr agenten
         gleichzeitig, als der worker-pool erlaubt. kein nacktes promise.all über die liste.
       </>
     ),
@@ -108,11 +108,11 @@ export const STEPS: TourStep[] = [
     ),
     body: (
       <>
-        der knopf hier startet einen echten lauf — 15 agenten, mock-modus, null euro. einer von
+        der knopf hier startet einen echten lauf — 15 agenten, demo-modus, null euro. einer von
         ihnen wird durchdrehen. das ist absicht. schau hin.
       </>
     ),
-    action: { label: "▶ mock-lauf starten ($0)", run: (c) => c.startMockRun() },
+    action: { label: "▶ demo-lauf starten ($0)", run: (c) => c.startMockRun() },
     advanceWhen: (r) => r?.status === "running",
     waitTimeoutMs: 10_000,
     skipIf: (c) => c.isRunning,

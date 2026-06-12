@@ -29,52 +29,62 @@ export const FinaleBand = memo(function FinaleBand({ run }: { run: RunState }) {
   const aborted = agents.filter((a) => a.status === "aborted").length;
   const h = headline(run);
 
-  const items: { label: string; node: React.ReactNode }[] = [
-    { label: "invest", node: <CountUp value={invest} format={(n) => String(Math.round(n))} /> },
-    { label: "pass", node: <CountUp value={pass} format={(n) => String(Math.round(n))} /> },
+  const mono = "font-mono text-xl font-semibold tabular-nums";
+  const items: { label: React.ReactNode; key: string; dot: string; node: React.ReactNode }[] = [
+    { key: "invest", label: "invest", dot: "stat-dot-ok", node: <CountUp value={invest} format={(n) => String(Math.round(n))} /> },
+    { key: "pass", label: "pass", dot: "stat-dot-dim", node: <CountUp value={pass} format={(n) => String(Math.round(n))} /> },
+    { key: "fehler", label: "fehler", dot: "stat-dot-err", node: <span className={mono}>{failed}</span> },
+    { key: "gestoppt", label: "gestoppt", dot: "stat-dot-warn", node: <span className={mono}>{aborted}</span> },
     {
-      label: "fehler · gestoppt",
-      node: (
-        <span className="font-mono text-xl font-semibold tabular-nums">
-          {failed} · {aborted}
-        </span>
-      ),
-    },
-    {
-      label: `tokens von ${num(run.budget.limit)}`,
+      key: "tokens",
+      label: `tokens · von ${num(run.budget.limit)}`,
+      dot: "stat-dot-accent",
       node: <CountUp value={run.budget.used} format={(n) => num(Math.round(n))} />,
     },
-    { label: "kosten", node: <CountUp value={run.costUsd} format={(n) => `$${n.toFixed(4)}`} /> },
     {
-      label: "peak-parallelität",
+      key: "kosten",
+      label: "kosten",
+      dot: "stat-dot-accent",
+      node: <CountUp value={run.costUsd} format={(n) => `$${n.toFixed(4)}`} />,
+    },
+    {
+      key: "peak",
+      label: "max. gleichzeitig",
+      dot: "stat-dot-accent",
       node: (
-        <span className="font-mono text-xl font-semibold tabular-nums">
+        <span className={mono}>
           {run.concurrencyPeak} / {run.config.concurrency}
         </span>
       ),
     },
     {
+      key: "dauer",
       label: "dauer",
-      node: (
-        <span className="font-mono text-xl font-semibold tabular-nums">
-          {formatDuration((run.endedAt ?? Date.now()) - run.startedAt)}
-        </span>
-      ),
+      dot: "stat-dot-dim",
+      node: <span className={mono}>{formatDuration((run.endedAt ?? Date.now()) - run.startedAt)}</span>,
     },
   ];
 
   return (
-    <section className="glass finale-in mb-4 p-5 sm:p-6" data-tour="finale">
+    <section className="glass finale-in mb-4 p-5" data-tour="finale">
       <h2 className="finale-headline">
         {h.pre}
         <em className="accent-serif">{h.em}</em>
         {h.post}
       </h2>
-      <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-4 lg:grid-cols-7">
+      <p className="panel-sub">
+        die bilanz: urteile, verbrauch, parallelität — und ob das budget gehalten hat.
+      </p>
+      <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-4 lg:grid-cols-8 lg:gap-x-0 lg:divide-x lg:divide-white/[0.06]">
         {items.map((it, i) => (
-          <div key={it.label} className="finale-item" style={{ "--i": i } as React.CSSProperties}>
+          <div
+            key={it.key}
+            className="finale-item lg:px-4 lg:first:pl-0 lg:last:pr-0"
+            style={{ "--i": i } as React.CSSProperties}
+          >
             {it.node}
-            <p className="mt-0.5 font-display text-[10px] uppercase tracking-[0.15em] text-ink-dim">
+            <p className="stat-label">
+              <i className={`stat-dot ${it.dot}`} />
               {it.label}
             </p>
           </div>
