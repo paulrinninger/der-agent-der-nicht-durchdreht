@@ -3,7 +3,7 @@
 import { memo } from "react";
 import type { AgentState, BatchItem } from "@/src/types";
 import { parseVerdict } from "./derive";
-import { callCount, num, pillFor } from "./labels";
+import { callCount, END_REASON_LABEL, num, pillFor } from "./labels";
 
 export function StatusPill({ agent }: { agent: AgentState }) {
   const p = pillFor(agent);
@@ -16,10 +16,20 @@ export function StatusPill({ agent }: { agent: AgentState }) {
   );
 }
 
-function MiniBar({ value, max, danger }: { value: number; max: number; danger: boolean }) {
+function MiniBar({
+  value,
+  max,
+  danger,
+  variant,
+}: {
+  value: number;
+  max: number;
+  danger: boolean;
+  variant?: "tokens";
+}) {
   const pct = Math.min(100, (value / max) * 100);
   return (
-    <div className="minibar">
+    <div className={"minibar" + (variant === "tokens" ? " minibar-tokens" : "")}>
       <div className={"minibar-fill" + (danger ? " danger-fill" : "")} style={{ width: pct + "%" }} />
     </div>
   );
@@ -30,6 +40,7 @@ const AgentCard = memo(function AgentCard({
   index,
   pitch,
   maxSteps,
+  maxTokens,
   selected,
   onClick,
 }: {
@@ -37,14 +48,22 @@ const AgentCard = memo(function AgentCard({
   index: number;
   pitch: string;
   maxSteps: number;
+  maxTokens: number;
   selected: boolean;
   onClick: () => void;
 }) {
   const p = pillFor(agent);
   const verdict = parseVerdict(agent.result);
   const last = agent.trace.length > 0 ? agent.trace[agent.trace.length - 1] : null;
+  // terminal-einträge tragen teils nur den status-slug (completed/finalized) — label zeigen
   const lastText =
-    agent.status === "running" && agent.lastAction ? agent.lastAction : (last?.detail ?? "");
+    agent.status === "running" && agent.lastAction
+      ? agent.lastAction
+      : last?.kind === "terminal" && agent.endReason
+        ? END_REASON_LABEL[agent.endReason]
+        : (last?.detail ?? "");
+  const tokens = agent.usage.inputTokens + agent.usage.outputTokens;
+  const retries = agent.trace.reduce((s, t) => s + (t.retries ?? 0), 0);
 
   return (
     <button
@@ -72,6 +91,14 @@ const AgentCard = memo(function AgentCard({
           {agent.steps}/{maxSteps} Steps
         </span>
         <span title="Tool-Calls">{callCount(agent)} Calls</span>
+        {retries > 0 && (
+          <span
+            className="accent"
+            data-tip="Transiente Tool-Fehler — automatisch per Backoff wiederholt, kein Strike."
+          >
+            ↻ {retries}
+          </span>
+        )}
         {/* keyed remount: zahl blippt bei jeder token-änderung */}
         <span title="Tokens" key={agent.usage.inputTokens + agent.usage.outputTokens} className="blip-num">
           {num(agent.usage.inputTokens + agent.usage.outputTokens)} Tok
@@ -82,11 +109,23 @@ const AgentCard = memo(function AgentCard({
           </span>
         )}
       </div>
-      <MiniBar
-        value={agent.steps}
-        max={maxSteps}
-        danger={agent.status === "failed" || agent.status === "aborted"}
-      />
+      <div className="card-bars">
+        <MiniBar
+          value={agent.steps}
+          max={maxSteps}
+          danger={agent.status === "failed" || agent.status === "aborted"}
+        />
+        {tokens > 0 && (
+          <div data-tip={`Tokens: ${num(tokens)} / ${num(maxTokens)} (Token-Cap pro Agent)`}>
+            <MiniBar
+              value={tokens}
+              max={maxTokens}
+              danger={agent.endReason === "token_cap"}
+              variant="tokens"
+            />
+          </div>
+        )}
+      </div>
       <p className="card-last mono">{lastText}</p>
     </button>
   );
@@ -96,12 +135,14 @@ export const AgentRoster = memo(function AgentRoster({
   agents,
   items,
   maxSteps,
+  maxTokens,
   selectedId,
   onSelect,
 }: {
   agents: AgentState[];
   items: BatchItem[];
   maxSteps: number;
+  maxTokens: number;
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
@@ -115,6 +156,7 @@ export const AgentRoster = memo(function AgentRoster({
           index={i}
           pitch={pitchById.get(a.itemId) ?? ""}
           maxSteps={maxSteps}
+          maxTokens={maxTokens}
           selected={selectedId === a.itemId}
           onClick={() => onSelect(a.itemId)}
         />

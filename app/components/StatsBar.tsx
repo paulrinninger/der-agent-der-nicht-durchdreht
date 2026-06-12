@@ -1,8 +1,8 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import type { RunState } from "@/src/types";
-import { parseVerdict } from "./derive";
+import { deriveGuardStats, formatDuration, parseVerdict } from "./derive";
 import { useOdometer } from "./hooks";
 import { num } from "./labels";
 
@@ -67,6 +67,7 @@ export const StatsBar = memo(function StatsBar({ run }: { run: RunState }) {
   const invest = agents.filter((a) => parseVerdict(a.result) === "invest").length;
   const pass = agents.filter((a) => parseVerdict(a.result) === "pass").length;
   const cost = useOdometer(run.costUsd);
+  const g = useMemo(() => deriveGuardStats(run), [run]);
 
   return (
     <div className="stats" data-tour="stats">
@@ -100,7 +101,10 @@ export const StatsBar = memo(function StatsBar({ run }: { run: RunState }) {
         </span>
         <span className="label">Invest / Pass</span>
       </div>
-      <div className="stat">
+      <div
+        className="stat"
+        data-tip="Präventiv durch Guardrails gestoppt — Step-Cap, Token-Cap, 3 Strikes oder kein Urteil."
+      >
         <span className={"stat-num mono" + (stopped ? " warn" : "")}>
           <StatNum value={stopped} />
         </span>
@@ -111,6 +115,24 @@ export const StatsBar = memo(function StatsBar({ run }: { run: RunState }) {
           <StatNum value={killed} />
         </span>
         <span className="label">Abgebrochen</span>
+      </div>
+      <div
+        className="stat"
+        data-tip="Transiente Tool-Fehler, automatisch mit Backoff wiederholt — kein Strike."
+      >
+        <span className="stat-num mono">
+          <StatNum value={g.retries} />
+        </span>
+        <span className="label">Retries</span>
+      </div>
+      <div
+        className="stat"
+        data-tip="Durchschnittliche Laufzeit der abgeschlossenen Agenten — erster bis letzter Trace-Eintrag."
+      >
+        <span className="stat-num mono">
+          {g.avgDurationMs == null ? "—" : formatDuration(g.avgDurationMs)}
+        </span>
+        <span className="label">Ø Dauer</span>
       </div>
       <div className="stat">
         <span className="stat-num mono">${cost.toFixed(4)}</span>

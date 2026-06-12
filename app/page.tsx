@@ -6,6 +6,8 @@ import type { RunEvent, RunMode, RunState } from "@/src/types";
 import { AgentRoster } from "./components/AgentRoster";
 import { Banner } from "./components/Banner";
 import { ControlsBar } from "./components/ControlsBar";
+import { EventFeed } from "./components/EventFeed";
+import { GuardrailStrip } from "./components/GuardrailStrip";
 import { useSlotAssignments, useTicker } from "./components/hooks";
 import { ItemEditor, type EditorItem } from "./components/ItemEditor";
 import { MissionHeader } from "./components/MissionHeader";
@@ -14,6 +16,7 @@ import { RunTimeline } from "./components/RunTimeline";
 import { SlotsPanel } from "./components/SlotsPanel";
 import { StatsBar } from "./components/StatsBar";
 import { TickerPanel } from "./components/TickerPanel";
+import { TokenChart } from "./components/TokenChart";
 import { TraceDrawer } from "./components/TraceDrawer";
 import { makePreviewRun } from "./components/tour/preview";
 import { Tour } from "./components/tour/Tour";
@@ -277,11 +280,19 @@ export default function Dashboard() {
         <>
           <StatsBar run={view} />
           {run && <Banner run={run} />}
+          {run && <GuardrailStrip run={run} />}
           <SlotsPanel run={view} slots={slots} />
+          {run && run.id !== "tour-preview" && (
+            <div className="insights">
+              <TokenChart run={run} live={isRunning} />
+              <EventFeed run={run} />
+            </div>
+          )}
           <AgentRoster
             agents={agents}
             items={view.config.items}
             maxSteps={view.config.maxStepsPerAgent}
+            maxTokens={view.config.maxTokensPerAgent}
             selectedId={selected}
             onSelect={(id) => setSelected(selected === id ? null : id)}
           />
@@ -310,7 +321,7 @@ export default function Dashboard() {
           agent={selectedAgent}
           index={selectedIndex}
           startedAt={view.startedAt}
-          maxSteps={view.config.maxStepsPerAgent}
+          config={view.config}
           onClose={() => setSelected(null)}
         />
       )}
